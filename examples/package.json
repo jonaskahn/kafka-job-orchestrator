@@ -20,7 +20,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@jonaskahn/kafka-job-orchestrator": "^0.0.1-RC1",
+    "@jonaskahn/kafka-job-orchestrator": "^1.0.1",
     "dotenv": "^16.3.1",
     "kafkajs": "^2.2.4",
     "mongodb": ">=6.0.0",
