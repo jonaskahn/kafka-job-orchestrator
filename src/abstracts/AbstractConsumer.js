@@ -113,7 +113,7 @@ class AbstractConsumer {
       METADATA_MAX_AGE_MS:
         parseInt(process.env.KJO_CONSUMSER_METADATA_MAX_AGE_MS) || 300000,
       ALLOW_AUTO_TOPIC_CREATION:
-        process.env.KJO_CONSUMSER_METADATA_ALLOW_AUTO_TOPIC_CREATION === "true",
+        process.env.KJO_CONSUMSER_ALLOW_AUTO_TOPIC_CREATION === "true",
       MAX_BYTES_PER_PARTITION:
         parseInt(process.env.KJO_CONSUMSER_MAX_BYTES_PER_PARTITION) || 1048576,
       MIN_BYTES: parseInt(process.env.KJO_CONSUMSER_MIN_BYTES) || 1,
@@ -250,22 +250,8 @@ class AbstractConsumer {
   }
 
   async _connectToAllServices() {
-    await this._ensureTopicExists();
     await this.redisService.connect();
     await this._createAndConnectKafkaConsumer();
-  }
-
-  async _ensureTopicExists() {
-    try {
-      const result = await this.topicService.ensureTopicExists(this.topic);
-      logger.logInfo(
-        `📊 Topic '${this.topic}' ready with ${result.partitions} partitions`
-      );
-    } catch (error) {
-      logger.logWarning(
-        `⚠️ Could not configure topic '${this.topic}': ${error.message}`
-      );
-    }
   }
 
   async _createAndConnectKafkaConsumer() {

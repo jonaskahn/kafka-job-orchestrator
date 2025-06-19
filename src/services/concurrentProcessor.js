@@ -195,7 +195,7 @@ class ConcurrentProcessor {
   }
 
   async _runTaskFunction(task, _taskId) {
-    return await task.processingFunction(task.messageData);
+    return await task.callbackExecutor(task.messageData);
   }
 
   _handleTaskSuccess(task, taskId, result) {
