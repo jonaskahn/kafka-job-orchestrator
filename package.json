@@ -1,6 +1,6 @@
 {
   "name": "@jonaskahn/kafka-job-orchestrator",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "High-availability distributed job orchestrator with Kafka message processing and Redis state management. Database-agnostic framework for building resilient cronjobs and task processors with built-in deduplication and concurrent processing.",
   "main": "src/index.js",
   "types": "src/index.d.ts",
