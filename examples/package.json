@@ -1,0 +1,30 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "description": "This directory contains example implementations of the abstract consumer and producer classes.",
+  "main": "consumer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "producer": "node producer.js",
+    "consumer": "node consumer.js",
+    "producer:crawler": "IMPLEMENTATION_TYPE=crawler node producer.js",
+    "consumer:crawler": "IMPLEMENTATION_TYPE=crawler node consumer.js",
+    "producer:email": "IMPLEMENTATION_TYPE=email node producer.js",
+    "consumer:email": "IMPLEMENTATION_TYPE=email node consumer.js",
+    "example:crawler": "node crawler/run-crawler.js",
+    "example:email:producer": "node email/run-email.js producer",
+    "example:email:consumer": "node email/run-email.js consumer",
+    "generate-data": "node generateData.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@jonaskahn/kafka-job-orchestrator": "^0.0.1",
+    "dotenv": "^16.3.1",
+    "kafkajs": "^2.2.4",
+    "mongodb": ">=6.0.0",
+    "node-cron": "^3.0.3",
+    "redis": "^5.5.6"
+  }
+}

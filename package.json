@@ -1,0 +1,78 @@
+{
+  "name": "@jonaskahn/kafka-job-orchestrator",
+  "version": "1.0.0",
+  "description": "High-availability distributed job orchestrator with Kafka message processing and Redis state management. Database-agnostic framework for building resilient cronjobs and task processors with built-in deduplication and concurrent processing.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/**/*",
+    "README.md",
+    "LICENSE",
+    "USAGE.md"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "code:check": "npm run lint && npm run format:check",
+    "code:fix": "npm run lint:fix && npm run format"
+  },
+  "keywords": [
+    "kafka",
+    "kafkajs",
+    "message-queue",
+    "job-queue",
+    "job-orchestrator",
+    "producer",
+    "consumer",
+    "redis",
+    "framework",
+    "concurrent-processing",
+    "cron",
+    "task-processor",
+    "distributed-systems",
+    "microservices",
+    "database-agnostic",
+    "deduplication",
+    "state-management",
+    "high-availability",
+    "clean-code",
+    "typescript"
+  ],
+  "author": "Jonas Kahn",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonaskahn/kafka-job-orchestrator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jonaskahn/kafka-job-orchestrator/issues"
+  },
+  "homepage": "https://github.com/jonaskahn/kafka-job-orchestrator#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "kafkajs": ">=2.0.0",
+    "redis": ">=4.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "mongodb": ">=6.0.0",
+    "node-cron": "^3.0.3",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.2.5"
+  },
+  "peerDependencies": {
+    "kafkajs": ">=2.0.0",
+    "redis": ">=4.0.0"
+  }
+}

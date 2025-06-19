@@ -1,0 +1,3491 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Producer/Consumer Framework - Technical Documentation</title>
+
+    <!-- Tailwind CSS + DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Section styling */
+        .content-section {
+            scroll-margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Floating Navigation */
+        .float-nav {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .float-nav:hover {
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .float-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .float-nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: #3b82f6;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .float-nav-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateX(5px);
+        }
+
+        .float-nav-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .float-nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .float-nav-text {
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .float-nav-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        /* Hide nav on small screens */
+        @media (max-width: 1280px) {
+            .float-nav {
+                display: none;
+            }
+        }
+
+        /* Adjust main content to not overlap with float nav */
+        @media (min-width: 1281px) {
+            .container {
+                padding-right: 12rem;
+            }
+        }
+
+        /* Custom styles for animations */
+        .flow-line {
+            stroke-dasharray: 5, 5;
+            stroke-dashoffset: 0;
+            animation: flow 20s linear infinite;
+        }
+
+        @keyframes flow {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .message-dot {
+            filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.5));
+        }
+
+        /* Code highlighting */
+        .hljs-comment {
+            color: #6b7280;
+        }
+
+        .hljs-keyword {
+            color: #3b82f6;
+        }
+
+        .hljs-string {
+            color: #10b981;
+        }
+
+        .hljs-function {
+            color: #f59e0b;
+        }
+
+        .hljs-class {
+            color: #8b5cf6;
+        }
+
+        /* Fix code block overflow */
+        .mockup-code {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .mockup-code pre {
+            overflow-x: auto;
+            white-space: pre;
+            word-wrap: normal;
+            max-width: 100%;
+        }
+
+        .mockup-code code {
+            display: block;
+            overflow-x: auto;
+            white-space: pre;
+            font-size: 0.875rem;
+        }
+
+        /* Ensure cards have proper overflow handling */
+        .card-body {
+            overflow: hidden;
+        }
+
+        /* Tab-specific isolation */
+        #content-producer .step-item {
+            transition: opacity 0.5s ease-out;
+        }
+
+        #content-consumer .step-item {
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* Producer-specific styles */
+        #producer-svg .flow-arrow {
+            stroke-width: 3;
+            fill: none;
+        }
+
+        /* Consumer-specific styles */
+        #consumer-svg .flow-arrow {
+            stroke-width: 3;
+            fill: none;
+        }
+
+        #consumer-svg .state-indicator {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        /* Ensure tabs are clickable */
+        .tab {
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body class="bg-base-200 min-h-screen">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-base-content mb-2">Producer/Consumer Framework</h1>
+            <p class="text-base-content/70 text-lg">Technical Documentation and Architecture Overview</p>
+        </div>
+
+        <!-- Floating Navigation -->
+        <nav class="float-nav">
+            <div class="float-nav-item active" data-section="producer">
+                <i class="float-nav-icon" data-lucide="upload"></i>
+                <span class="float-nav-text">Producer Flow</span>
+            </div>
+            <div class="float-nav-item" data-section="consumer">
+                <i class="float-nav-icon" data-lucide="download"></i>
+                <span class="float-nav-text">Consumer Flow</span>
+            </div>
+            <div class="float-nav-item" data-section="system">
+                <i class="float-nav-icon" data-lucide="network"></i>
+                <span class="float-nav-text">Complete System</span>
+            </div>
+            <div class="float-nav-item" data-section="implementation">
+                <i class="float-nav-icon" data-lucide="code-2"></i>
+                <span class="float-nav-text">Implementation</span>
+            </div>
+        </nav>
+
+        <!-- Content Sections -->
+        <!-- Producer Section -->
+        <section class="content-section" id="producer">
+            <!-- Visual Flow - Full Width -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="card-title text-2xl mb-0">
+                            <i class="w-6 h-6" data-lucide="git-branch"></i>
+                            Producer Flow Visualization
+                        </h2>
+                        <button class="btn btn-primary btn-sm" onclick="replayProducerAnimation()">
+                            <i class="w-4 h-4" data-lucide="refresh-cw"></i>
+                            Replay Animation
+                        </button>
+                    </div>
+
+                    <svg class="w-full" id="producer-svg" style="max-height: 600px;" viewBox="0 0 800 600">
+                        <!-- Background -->
+                        <rect fill="#f9fafb" height="580" rx="15" stroke="#e5e7eb" stroke-width="1" width="780" x="10"
+                            y="10" />
+
+                        <!-- Title -->
+                        <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="400" y="40">Producer
+                            Architecture
+                        </text>
+
+                        <!-- MongoDB -->
+                        <g id="prod-mongodb" transform="translate(50, 150)">
+                            <rect fill="#4ade80" height="80" rx="12" stroke="#22c55e" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold text-lg" text-anchor="middle" x="70" y="35">MongoDB</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="70" y="55">Data
+                                Source
+                            </text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="70">(PENDING
+                                items)
+                            </text>
+                        </g>
+
+                        <!-- Redis - Two separate boxes -->
+                        <!-- Redis Get -->
+                        <g id="prod-redis-get" transform="translate(550, 80)">
+                            <rect fill="#fbbf24" height="70" rx="10" stroke="#f59e0b" stroke-width="2" width="150" />
+                            <text class="fill-base-content font-semibold" text-anchor="middle" x="75" y="25">Redis
+                            </text>
+                            <text class="fill-base-content text-sm" text-anchor="middle" x="75" y="45">Get
+                                Excluded
+                                IDs
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="75" y="60">(PROD:PREFIX:*)
+                            </text>
+                        </g>
+
+                        <!-- Redis Save -->
+                        <g id="prod-redis-save" transform="translate(550, 200)">
+                            <rect fill="#f87171" height="100" rx="10" stroke="#ef4444" stroke-width="2" width="150" />
+                            <text class="fill-white font-semibold" text-anchor="middle" x="75" y="25">Redis</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="45">1. Check
+                                Hash
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="65">2. Save Item
+                                ID
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="85">3. Save
+                                Hash
+                            </text>
+                        </g>
+
+                        <!-- Producer (Central) -->
+                        <g id="prod-producer-node" transform="translate(280, 250)">
+                            <rect fill="#60a5fa" height="100" rx="12" stroke="#3b82f6" stroke-width="3" width="180" />
+                            <text class="fill-white font-bold text-xl" text-anchor="middle" x="90" y="30">Producer
+                            </text>
+                            <rect fill="#3b82f6" height="20" opacity="0.3" rx="5" width="150" x="15" y="45" />
+                            <text class="fill-white text-sm" text-anchor="middle" x="90" y="59">Orchestrates
+                                Flow
+                            </text>
+                            <rect fill="#3b82f6" height="20" opacity="0.3" rx="5" width="150" x="15" y="70" />
+                            <text class="fill-white text-sm" text-anchor="middle" x="90" y="84">Batch
+                                Processing
+                            </text>
+                        </g>
+
+                        <!-- Kafka -->
+                        <g id="prod-kafka" transform="translate(280, 450)">
+                            <rect fill="#a78bfa" height="80" rx="12" stroke="#8b5cf6" stroke-width="2" width="180" />
+                            <text class="fill-white font-bold text-lg" text-anchor="middle" x="90" y="35">Kafka
+                                Topic
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="90" y="55">Message
+                                Queue
+                            </text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="90" y="70">(JSON
+                                messages)
+                            </text>
+                        </g>
+
+                        <!-- Flow Arrows with numbered steps -->
+                        <!-- Step 1: Redis -> Producer (get excluded IDs) -->
+                        <g class="opacity-0" id="prod-step-1">
+                            <path d="M 550 115 L 460 280" marker-end="url(#arrow-orange)" stroke="#f59e0b"
+                                stroke-dasharray="5,5" stroke-width="3" />
+                            <circle cx="505" cy="197" fill="white" r="18" stroke="#f59e0b" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="505" y="203">1
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#f59e0b" stroke-width="1" width="90" x="460"
+                                y="215" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="505" y="229">Get Excluded
+                                IDs
+                            </text>
+                        </g>
+
+                        <!-- Step 2: MongoDB -> Producer (query items) -->
+                        <g class="opacity-0" id="prod-step-2">
+                            <path d="M 190 190 L 280 280" marker-end="url(#arrow-green)" stroke="#22c55e"
+                                stroke-width="3" />
+                            <circle cx="235" cy="235" fill="white" r="18" stroke="#22c55e" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="235" y="241">2
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#22c55e" stroke-width="1" width="90" x="190"
+                                y="253" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="235" y="267">Query
+                                Items
+                            </text>
+                        </g>
+
+                        <!-- Step 3: Producer -> Redis (check hash & save) -->
+                        <g class="opacity-0" id="prod-step-3">
+                            <path d="M 460 300 L 550 250" marker-end="url(#arrow-red)" stroke="#ef4444"
+                                stroke-width="3" />
+                            <circle cx="505" cy="275" fill="white" r="18" stroke="#ef4444" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="505" y="281">3
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#ef4444" stroke-width="1" width="100" x="455"
+                                y="293" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="505" y="307">Check &
+                                Save
+                            </text>
+                        </g>
+
+                        <!-- Step 4: Producer -> Kafka (send batch) -->
+                        <g class="opacity-0" id="prod-step-4">
+                            <path d="M 370 350 L 370 450" marker-end="url(#arrow-purple)" stroke="#8b5cf6"
+                                stroke-width="3" />
+                            <circle cx="370" cy="400" fill="white" r="18" stroke="#8b5cf6" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="370" y="406">4
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#8b5cf6" stroke-width="1" width="100" x="320"
+                                y="418" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="370" y="432">Send to
+                                Kafka
+                            </text>
+                        </g>
+
+                        <!-- Arrow markers and gradients -->
+                        <defs>
+                            <!-- Arrow markers -->
+                            <marker id="arrow-orange" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#f59e0b" />
+                            </marker>
+                            <marker id="arrow-green" markerHeight="10" markerWidth="10" orient="auto" refX="8" refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#22c55e" />
+                            </marker>
+                            <marker id="arrow-red" markerHeight="10" markerWidth="10" orient="auto" refX="8" refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#ef4444" />
+                            </marker>
+                            <marker id="arrow-purple" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#8b5cf6" />
+                            </marker>
+
+                            <!-- Gradients for a more dynamic look -->
+                            <linearGradient id="grad-orange" x1="0%" x2="100%" y1="0%" y2="0%">
+                                <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:0.2" />
+                                <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="grad-green" x1="0%" x2="100%" y1="0%" y2="0%">
+                                <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.2" />
+                                <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="grad-red" x1="0%" x2="100%" y1="0%" y2="0%">
+                                <stop offset="0%" style="stop-color:#fca5a5;stop-opacity:0.2" />
+                                <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="grad-purple" x1="0%" x2="0%" y1="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#c4b5fd;stop-opacity:0.2" />
+                                <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- TTL indicators -->
+                        <g transform="translate(560, 340)">
+                            <rect fill="#f3f4f6" height="50" rx="8" stroke="#d1d5db" stroke-width="1" width="130" />
+                            <text class="fill-base-content text-sm font-semibold" text-anchor="middle" x="65" y="20">TTL
+                                Settings
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="35">ID: 120
+                                seconds
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="45">Hash: 120
+                                seconds
+                            </text>
+                        </g>
+
+                        <!-- Animated flow dots -->
+                        <g class="opacity-0" id="flow-dots">
+                            <!-- Dot 1: Redis to Producer -->
+                            <circle class="opacity-0" fill="#f59e0b" r="6">
+                                <animateMotion begin="0s" dur="2s" repeatCount="indefinite">
+                                    <mpath href="#path-step-1" />
+                                </animateMotion>
+                                <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 2: MongoDB to Producer -->
+                            <circle class="opacity-0" fill="#22c55e" r="6">
+                                <animateMotion begin="0.5s" dur="2s" repeatCount="indefinite">
+                                    <mpath href="#path-step-2" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="0.5s" dur="2s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 3: Producer to Redis -->
+                            <circle class="opacity-0" fill="#ef4444" r="6">
+                                <animateMotion begin="1s" dur="2s" repeatCount="indefinite">
+                                    <mpath href="#path-step-3" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="1s" dur="2s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 4: Producer to Kafka -->
+                            <circle class="opacity-0" fill="#8b5cf6" r="6">
+                                <animateMotion begin="1.5s" dur="2s" repeatCount="indefinite">
+                                    <mpath href="#path-step-4" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="1.5s" dur="2s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+                        </g>
+
+                        <!-- Hidden paths for animation -->
+                        <defs>
+                            <path d="M 550 115 L 460 280" id="path-step-1" />
+                            <path d="M 190 190 L 280 280" id="path-step-2" />
+                            <path d="M 460 300 L 550 250" id="path-step-3" />
+                            <path d="M 370 350 L 370 450" id="path-step-4" />
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Detailed Steps -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title text-2xl mb-4">
+                        <i class="w-6 h-6" data-lucide="list-ordered"></i>
+                        Detailed Process Steps
+                    </h2>
+
+                    <div class="space-y-4" id="producer-steps">
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-primary badge-lg">1</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Get Excluded IDs from Redis</h3>
+                                    <p class="text-base-content/70">Queries Redis for active processing keys and
+                                        recently sent items to build an exclusion list.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>     // Get processing IDs (from consumers)
+    const processingIds = await redisService.getProcessingIds();
+    // Example: ['id1', 'id2'] from CONS:PREFIX:*
+
+    // Get recently sent IDs (from producers)
+    const sentIds = await redisService.getSentIds();
+    // Example: ['id3', 'id4'] from PREFIX_SENT:*
+
+    const excludedIds = [...new Set([...processingIds, ...sentIds])];
+                                        </code></pre>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <div class="badge badge-warning gap-2">
+                                            <i class="w-4 h-4" data-lucide="cpu"></i>
+                                            Processing: CONS:PREFIX:*
+                                        </div>
+                                        <div class="badge badge-info gap-2">
+                                            <i class="w-4 h-4" data-lucide="send"></i>
+                                            Sent: PREFIX_SENT:*
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-primary badge-lg">2</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Query Data Source with Criteria</h3>
+                                    <p class="text-base-content/70">Executes database query with specified criteria,
+                                        excluding items found in Redis.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>     // Abstract method - you implement this
+    async getNextProcessingItems(criteria, limit, excludedIds) {
+      // Example MongoDB implementation
+      return await collection.find({
+        ...criteria,  // { state: STATES.PENDING }
+        _id: { $nin: excludedIds }
+      })
+      .limit(limit)
+      .toArray();
+    }
+
+    // Usage in your producer
+    await this.produceMessages(
+      { state: STATES.PENDING, priority: 'high' },
+      50,
+      "new"
+    );
+                                        </code></pre>
+                                    </div>
+                                    <div class="alert alert-success mt-2">
+                                        <i class="w-4 h-4" data-lucide="plug"></i>
+                                        <span>Compatible with MongoDB, MySQL, PostgreSQL, and other data sources.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-primary badge-lg">3</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Generate & Check Message Hash</h3>
+                                    <p class="text-base-content/70">Generates MD5 hash of item content and compares with
+                                        stored hash values.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>     // Generate hash from item content
+    const messageHash = redisService.generateMessageHash(item);
+    // Uses: md5(id + URL/email + state)
+
+    // Check if already sent with same content
+    const isRecentlySent = await redisService.isSentRecently(
+      itemId,
+      messageHash
+    );
+
+    // Compare stored hash with current
+    if (storedHash === messageHash) {
+      skip(); // Same content already sent
+    }
+                                        </code></pre>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 mt-2">
+                                        <div class="badge badge-warning gap-2">
+                                            <i class="w-4 h-4" data-lucide="shield"></i>
+                                            Content-based dedup
+                                        </div>
+                                        <div class="badge badge-info gap-2">
+                                            <i class="w-4 h-4" data-lucide="hash"></i>
+                                            MD5 hashing
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-primary badge-lg">4</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Create & Send Kafka Messages</h3>
+                                    <p class="text-base-content/70">Constructs Kafka messages with deterministic keys
+                                        and sends to configured topic.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>     // Create messages with stable keys
+    const messages = messageService.createKafkaMessages(
+      itemsWithHashes,
+      messageType
+    );
+
+    // Message structure
+    {
+      key: "new-a1b2c3d4e5f6",  // Stable key
+      value: JSON.stringify({
+        id: item._id.toString(),
+        data: item,
+        type: messageType
+      }),
+      headers: {
+        'message-type': 'new',
+        'item-id': 'id123',
+        'content-hash': 'abc123...',
+        'timestamp': '1234567890'
+      }
+    }
+
+    // Send with acks=-1 (all replicas)
+    await kafkaProducer.send({
+      topic: this.topic,
+      messages,
+      acks: -1,
+      timeout: 30000
+    });
+                                        </code></pre>
+                                    </div>
+                                    <div class="stats shadow mt-2">
+                                        <div class="stat">
+                                            <div class="stat-title">Acknowledgment</div>
+                                            <div class="stat-value text-primary">acks=-1</div>
+                                            <div class="stat-desc">All replicas</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Idempotent</div>
+                                            <div class="stat-value text-warning">false</div>
+                                            <div class="stat-desc">For acks flexibility</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Timeout</div>
+                                            <div class="stat-value text-info">30s</div>
+                                            <div class="stat-desc">Configurable</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-primary badge-lg">5</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Mark Items as Sent in Redis</h3>
+                                    <p class="text-base-content/70">Records item ID and content hash in Redis with
+                                        configured TTL.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>     // For each successfully sent item
+    for (const { item, messageHash } of itemsToProcess) {
+      const itemId = this.getItemId(item);
+
+      // Store item ID with message hash
+      await redisService.setSentMessage(itemId, messageHash);
+      // Key: PREFIX_SENT:itemId
+      // Value: messageHash
+      // TTL: 120 seconds (2 minutes)
+
+      // Call success handler
+      await this.onSuccess(itemId);
+    }
+                                        </code></pre>
+                                    </div>
+                                    <div class="alert alert-info mt-2">
+                                        <i class="w-5 h-5" data-lucide="info"></i>
+                                        <div>
+                                            <p class="font-semibold">Storage Components</p>
+                                            <ul class="text-sm mt-1 ml-4 list-disc">
+                                                <li>ID tracking: Item identifier storage</li>
+                                                <li>Hash storage: Content fingerprint for comparison</li>
+                                                <li>TTL configuration: 120 second expiration</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Features -->
+            <div class="card bg-base-100 shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="settings"></i>
+                        Producer Specifications
+                    </h2>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="stat bg-primary/10 rounded-xl">
+                            <div class="stat-figure text-primary">
+                                <i class="w-8 h-8" data-lucide="shield-check"></i>
+                            </div>
+                            <div class="stat-title">Deduplication</div>
+                            <div class="stat-value text-2xl">Hybrid</div>
+                            <div class="stat-desc">ID + Content Hash</div>
+                        </div>
+
+                        <div class="stat bg-secondary/10 rounded-xl">
+                            <div class="stat-figure text-secondary">
+                                <i class="w-8 h-8" data-lucide="layers"></i>
+                            </div>
+                            <div class="stat-title">Flexibility</div>
+                            <div class="stat-value text-2xl">Any DB</div>
+                            <div class="stat-desc">MongoDB, MySQL, API</div>
+                        </div>
+
+                        <div class="stat bg-accent/10 rounded-xl">
+                            <div class="stat-figure text-accent">
+                                <i class="w-8 h-8" data-lucide="settings"></i>
+                            </div>
+                            <div class="stat-title">Configuration</div>
+                            <div class="stat-value text-2xl">Flexible</div>
+                            <div class="stat-desc">Criteria-based queries</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deduplication Mechanism -->
+            <div class="card bg-info/10 border-info shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="shield"></i>
+                        Deduplication Mechanisms Explained
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">1. Item ID Deduplication</h3>
+                            <p class="text-base-content/70 mb-2">Tracks sent item identifiers to prevent duplicate
+                                transmission.</p>
+                            <div class="mockup-code">
+                                <pre><code>    // Redis key pattern
+    EMAIL_SENT:item123 → "hash123..."
+    // TTL: 120 seconds (2 minutes)
+
+    // Check during query
+    const sentIds = await redisService.getSentIds();
+    // Query excludes these IDs
+
+    // After sending
+    await redisService.setSentMessage(
+      itemId,
+      messageHash
+    );
+                                </code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">2. Content Hash Deduplication</h3>
+                            <p class="text-base-content/70 mb-2">Compares message hashes to detect duplicate content
+                                across different IDs.</p>
+                            <div class="mockup-code">
+                                <pre><code>    // Generate hash from content
+    const hash = md5(id + URL/email + state);
+
+    // Check if same content was sent
+    const storedHash = await redisService
+      .getSentMessageHash(itemId);
+
+    if (storedHash === hash) {
+      skip(); // Same content already sent
+    }
+                                </code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-4">
+                        <i class="w-5 h-5" data-lucide="info"></i>
+                        <div>
+                            <p class="font-semibold">Operation Sequence</p>
+                            <ul class="mt-1 ml-6 list-disc">
+                                <li><strong>Query Time:</strong> Excludes IDs found in Redis</li>
+                                <li><strong>Before Send:</strong> Validates content hash against stored values</li>
+                                <li><strong>After Send:</strong> Records ID and hash with TTL</li>
+                                <li><strong>TTL Strategy:</strong> 120 second expiration for sent items</li>
+                                <li><strong>Processing Keys:</strong> CONS:PREFIX:* pattern for active processing</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abstract Producer Pattern -->
+            <div class="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="code-2"></i>
+                        Abstract Producer Implementation
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Provided Functionality</h3>
+                            <ul class="space-y-2">
+                                <li class="flex gap-2">
+                                    <i class="w-5 h-5 text-success" data-lucide="check-circle"></i>
+                                    <span>Redis deduplication (ID + content hash)</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <i class="w-5 h-5 text-success" data-lucide="check-circle"></i>
+                                    <span>Kafka connection and message sending</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <i class="w-5 h-5 text-success" data-lucide="check-circle"></i>
+                                    <span>Stable message key generation</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <i class="w-5 h-5 text-success" data-lucide="check-circle"></i>
+                                    <span>Message headers and metadata</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <i class="w-5 h-5 text-success" data-lucide="check-circle"></i>
+                                    <span>Error handling and logging</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Required Implementation</h3>
+                            <div class="mockup-code">
+                                <pre><code class="language-javascript">class MyProducer extends AbstractProducer {
+          // 1. Query your data source
+          async getNextProcessingItems(criteria, limit, excludedIds) {
+            return await myDB.find(criteria, excludedIds);
+          }
+
+          // 2. Get item ID
+          getItemId(item) {
+            return item._id.toString();
+          }
+
+          // 3. Get display key
+          getItemKey(item) {
+            return item.name || item.email;
+          }
+    }</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Consumer Section -->
+        <section class="content-section" id="consumer">
+            <!-- Visual Flow - Full Width -->
+            <div class="card bg-base-100 shadow-xl mb-6">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="card-title text-2xl mb-0">
+                            <i class="w-6 h-6" data-lucide="git-merge"></i>
+                            Consumer Flow Visualization
+                        </h2>
+                        <button class="btn btn-primary btn-sm" onclick="replayConsumerAnimation()">
+                            <i class="w-4 h-4" data-lucide="refresh-cw"></i>
+                            Replay Animation
+                        </button>
+                    </div>
+
+                    <svg class="w-full" id="consumer-svg" style="max-height: 700px;" viewBox="0 0 1200 700">
+                        <!-- Background -->
+                        <rect fill="#f9fafb" height="680" rx="15" stroke="#e5e7eb" stroke-width="1" width="1180" x="10"
+                            y="10" />
+
+                        <!-- Title -->
+                        <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="600" y="40">Consumer
+                            Architecture
+                        </text>
+
+                        <!-- Flow: Left to Right, Top Row -->
+
+                        <!-- 1. Kafka (Source) -->
+                        <g id="cons-kafka" transform="translate(50, 150)">
+                            <rect fill="#a78bfa" height="80" rx="12" stroke="#8b5cf6" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold text-lg" text-anchor="middle" x="70" y="35">Kafka
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="70" y="55">Message
+                                Source
+                            </text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="70">(Pull Model)</text>
+                        </g>
+
+                        <!-- 2. Consumer (Central) -->
+                        <g id="cons-consumer-node" transform="translate(250, 130)">
+                            <rect fill="#60a5fa" height="120" rx="12" stroke="#3b82f6" stroke-width="3" width="180" />
+                            <text class="fill-white font-bold text-xl" text-anchor="middle" x="90" y="35">Consumer
+                            </text>
+                            <rect fill="#3b82f6" height="20" opacity="0.3" rx="5" width="150" x="15" y="55" />
+                            <text class="fill-white text-sm" text-anchor="middle" x="90" y="69">Message
+                                Processor
+                            </text>
+                            <rect fill="#3b82f6" height="20" opacity="0.3" rx="5" width="150" x="15" y="80" />
+                            <text class="fill-white text-sm" text-anchor="middle" x="90" y="94">Business
+                                Logic
+                            </text>
+                        </g>
+
+                        <!-- 3. Redis Check -->
+                        <g id="cons-redis-check" transform="translate(490, 150)">
+                            <rect fill="#fbbf24" height="80" rx="10" stroke="#f59e0b" stroke-width="2" width="150" />
+                            <text class="fill-base-content font-semibold" text-anchor="middle" x="75" y="20">Redis
+                            </text>
+                            <text class="fill-base-content text-sm font-semibold" text-anchor="middle" x="75"
+                                y="35">Status Check 1
+                            </text>
+                            <text class="fill-base-content text-sm" text-anchor="middle" x="75" y="50">Is Processing?
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="75" y="70">(CONS:PREFIX:id)
+                            </text>
+                        </g>
+
+                        <!-- 4. Database Check -->
+                        <g id="cons-db-check-box" transform="translate(700, 150)">
+                            <rect fill="#4ade80" height="80" rx="10" stroke="#22c55e" stroke-width="2" width="150" />
+                            <text class="fill-white font-semibold" text-anchor="middle" x="75" y="20">Database</text>
+                            <text class="fill-white text-sm font-semibold" text-anchor="middle" x="75" y="35">Status
+                                Check 2</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="50">Is Completed?</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="75" y="70">(Skip if true)</text>
+                        </g>
+
+                        <!-- 5. Redis Set Processing -->
+                        <g id="cons-redis-set" transform="translate(910, 150)">
+                            <rect fill="#f87171" height="80" rx="10" stroke="#ef4444" stroke-width="2" width="150" />
+                            <text class="fill-white font-semibold" text-anchor="middle" x="75" y="20">Redis</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="40">Set
+                                Processing
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="55">State
+                                (Virtual)
+                            </text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="75" y="70">(TTL: 5 min)
+                            </text>
+                        </g>
+
+                        <!-- Flow: Bottom Row (Right to Left) -->
+
+                        <!-- 6. Execute Business Logic - moved to right -->
+                        <g id="cons-process" transform="translate(910, 350)">
+                            <rect fill="#6366f1" height="80" rx="12" stroke="#4f46e5" stroke-width="2" width="150" />
+                            <text class="fill-white font-bold text-lg" text-anchor="middle" x="75" y="30">Process
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="50">Execute
+                                Logic
+                            </text>
+                        </g>
+
+                        <!-- 7. MongoDB Update -->
+                        <g id="cons-mongodb" transform="translate(700, 350)">
+                            <rect fill="#4ade80" height="80" rx="12" stroke="#22c55e" stroke-width="2" width="150" />
+                            <text class="fill-white font-bold text-lg" text-anchor="middle" x="75" y="30">MongoDB
+                            </text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="50">Update State</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="75" y="65">(COMPLETED/FAILED)
+                            </text>
+                        </g>
+
+                        <!-- 8. Redis Cleanup -->
+                        <g id="cons-redis-cleanup" transform="translate(490, 350)">
+                            <rect fill="#10b981" height="80" rx="10" stroke="#059669" stroke-width="2" width="150" />
+                            <text class="fill-white font-semibold" text-anchor="middle" x="75" y="25">Redis</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="45">Remove</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="75" y="60">Processing
+                                Key
+                            </text>
+                        </g>
+
+                        <!-- Flow Arrows with numbered steps -->
+                        <!-- Step 1: Kafka -> Consumer (pull messages) -->
+                        <g class="opacity-0" id="cons-step-1">
+                            <path d="M 190 190 L 250 190" marker-end="url(#cons-arrow-purple)" stroke="#a78bfa"
+                                stroke-width="3" />
+                            <circle cx="220" cy="190" fill="white" r="18" stroke="#a78bfa" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="220" y="196">1
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#a78bfa" stroke-width="1" width="100" x="170"
+                                y="210" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="220" y="224">Pull
+                                Messages
+                            </text>
+                        </g>
+
+                        <!-- Step 2: Consumer -> Redis (check) -->
+                        <g class="opacity-0" id="cons-step-2">
+                            <path d="M 430 190 L 490 190" marker-end="url(#cons-arrow-orange)" stroke="#f59e0b"
+                                stroke-width="3" />
+                            <circle cx="460" cy="190" fill="white" r="18" stroke="#f59e0b" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="460" y="196">2
+                            </text>
+                            <rect fill="white" height="32" rx="10" stroke="#f59e0b" stroke-width="1" width="120" x="400"
+                                y="205" />
+                            <text class="fill-base-content text-xs font-semibold" text-anchor="middle" x="460"
+                                y="219">Status Check 1</text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="460" y="232">Redis</text>
+                        </g>
+
+                        <!-- Step 3: Redis -> Database (check completed) -->
+                        <g class="opacity-0" id="cons-step-3">
+                            <path d="M 640 190 L 700 190" marker-end="url(#cons-arrow-green)" stroke="#22c55e"
+                                stroke-width="3" />
+                            <circle cx="670" cy="190" fill="white" r="18" stroke="#22c55e" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="670" y="196">3
+                            </text>
+                            <rect fill="white" height="32" rx="10" stroke="#22c55e" stroke-width="1" width="120" x="610"
+                                y="205" />
+                            <text class="fill-base-content text-xs font-semibold" text-anchor="middle" x="670"
+                                y="219">Status Check 2</text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="670" y="232">Database</text>
+                        </g>
+
+                        <!-- Step 4: Database -> Redis (set processing) -->
+                        <g class="opacity-0" id="cons-step-4">
+                            <path d="M 850 190 L 910 190" marker-end="url(#cons-arrow-red)" stroke="#ef4444"
+                                stroke-width="3" />
+                            <circle cx="880" cy="190" fill="white" r="18" stroke="#ef4444" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="880" y="196">4
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#ef4444" stroke-width="1" width="100" x="830"
+                                y="210" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="880" y="224">Set
+                                Processing
+                            </text>
+                        </g>
+
+                        <!-- Step 5: Redis Set -> Process (down) -->
+                        <g class="opacity-0" id="cons-step-5">
+                            <path d="M 985 230 L 985 350" marker-end="url(#cons-arrow-indigo)" stroke="#6366f1"
+                                stroke-width="3" />
+                            <circle cx="985" cy="290" fill="white" r="18" stroke="#6366f1" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="985" y="296">5
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#6366f1" stroke-width="1" width="100" x="935"
+                                y="305" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="985" y="319">Execute
+                                Logic
+                            </text>
+                        </g>
+
+                        <!-- Step 6: Process -> MongoDB (update state) -->
+                        <g class="opacity-0" id="cons-step-6">
+                            <path d="M 910 390 L 850 390" marker-end="url(#cons-arrow-green2)" stroke="#22c55e"
+                                stroke-width="3" />
+                            <circle cx="880" cy="390" fill="white" r="18" stroke="#22c55e" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="880" y="396">6
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#22c55e" stroke-width="1" width="100" x="830"
+                                y="408" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="880" y="422">Update
+                                State
+                            </text>
+                        </g>
+
+                        <!-- Step 7: MongoDB -> Redis (cleanup) -->
+                        <g class="opacity-0" id="cons-step-7">
+                            <path d="M 700 390 L 640 390" marker-end="url(#cons-arrow-emerald)" stroke="#10b981"
+                                stroke-width="3" />
+                            <circle cx="670" cy="390" fill="white" r="18" stroke="#10b981" stroke-width="2" />
+                            <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="670" y="396">7
+                            </text>
+                            <rect fill="white" height="20" rx="10" stroke="#10b981" stroke-width="1" width="100" x="620"
+                                y="408" />
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="670" y="422">Cleanup
+                            </text>
+                        </g>
+
+                        <!-- Arrow markers -->
+                        <defs>
+                            <marker id="cons-arrow-purple" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#a78bfa" />
+                            </marker>
+                            <marker id="cons-arrow-orange" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#f59e0b" />
+                            </marker>
+                            <marker id="cons-arrow-red" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#ef4444" />
+                            </marker>
+                            <marker id="cons-arrow-green" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#22c55e" />
+                            </marker>
+                            <marker id="cons-arrow-green2" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#22c55e" />
+                            </marker>
+                            <marker id="cons-arrow-emerald" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#10b981" />
+                            </marker>
+                            <marker id="cons-arrow-indigo" markerHeight="10" markerWidth="10" orient="auto" refX="8"
+                                refY="4">
+                                <path d="M0,0 L0,8 L8,4 z" fill="#6366f1" />
+                            </marker>
+                        </defs>
+
+                        <!-- Virtual State indicator -->
+                        <g transform="translate(50, 480)">
+                            <rect fill="#fef3c7" height="100" rx="8" stroke="#f59e0b" stroke-width="2" width="180" />
+                            <text class="fill-base-content text-sm font-semibold" text-anchor="middle" x="90"
+                                y="25">Virtual Processing State
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="90" y="45">EXISTS only
+                                in Redis
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="90" y="60">Auto-cleanup
+                                on crash
+                            </text>
+                            <text class="fill-base-content text-xs font-semibold" text-anchor="middle" x="90" y="80">TTL
+                                prevents stuck items</text>
+                        </g>
+
+                        <!-- Flow Summary Box -->
+                        <g transform="translate(250, 480)">
+                            <rect fill="#e0e7ff" height="100" rx="8" stroke="#6366f1" stroke-width="2" width="180" />
+                            <text class="fill-base-content text-sm font-semibold" text-anchor="middle" x="90"
+                                y="25">Flow Summary
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="90" y="45">1. Pull → 2.
+                                Check Redis
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="90" y="60">3. Check DB → 4.
+                                Set Processing
+                            </text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="90" y="75">5. Execute → 6.
+                                Update → 7. Cleanup</text>
+                        </g>
+
+                        <!-- Animated flow dots -->
+                        <g class="opacity-0" id="cons-flow-dots">
+                            <!-- Dot 1: Kafka to Consumer -->
+                            <circle class="opacity-0" fill="#a78bfa" r="6">
+                                <animateMotion begin="0s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-1" />
+                                </animateMotion>
+                                <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 2: Consumer to Redis Check -->
+                            <circle class="opacity-0" fill="#f59e0b" r="6">
+                                <animateMotion begin="0.5s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-2" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="0.5s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 3: Redis to Database Check -->
+                            <circle class="opacity-0" fill="#22c55e" r="6">
+                                <animateMotion begin="1s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-3" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="1s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 4: Database to Redis Set -->
+                            <circle class="opacity-0" fill="#ef4444" r="6">
+                                <animateMotion begin="1.5s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-4" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="1.5s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 5: Down to Process -->
+                            <circle class="opacity-0" fill="#6366f1" r="6">
+                                <animateMotion begin="2s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-5" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="2s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 6: Process to MongoDB Update -->
+                            <circle class="opacity-0" fill="#22c55e" r="6">
+                                <animateMotion begin="2.5s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-6" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="2.5s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+
+                            <!-- Dot 7: MongoDB to Redis Cleanup -->
+                            <circle class="opacity-0" fill="#10b981" r="6">
+                                <animateMotion begin="3s" dur="3s" repeatCount="indefinite">
+                                    <mpath href="#cons-path-step-7" />
+                                </animateMotion>
+                                <animate attributeName="opacity" begin="3s" dur="3s" repeatCount="indefinite"
+                                    values="0;1;1;0" />
+                            </circle>
+                        </g>
+
+                        <!-- Hidden paths for animation -->
+                        <defs>
+                            <path d="M 190 190 L 250 190" id="cons-path-step-1" />
+                            <path d="M 430 190 L 490 190" id="cons-path-step-2" />
+                            <path d="M 640 190 L 700 190" id="cons-path-step-3" />
+                            <path d="M 850 190 L 910 190" id="cons-path-step-4" />
+                            <path d="M 985 230 L 985 350" id="cons-path-step-5" />
+                            <path d="M 910 390 L 850 390" id="cons-path-step-6" />
+                            <path d="M 700 390 L 640 390" id="cons-path-step-7" />
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Detailed Steps -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title text-2xl mb-4">
+                        <i class="w-6 h-6" data-lucide="workflow"></i>
+                        Consumer Processing Steps
+                    </h2>
+
+                    <div class="space-y-4" id="consumer-steps">
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">1</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Configure & Pull Messages from Kafka</h3>
+                                    <p class="text-base-content/70">Consumer establishes connection to Kafka broker and
+                                        begins message consumption.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>// Consumer configuration
+const consumer = kafkaClient.consumer({
+  groupId: this.consumerGroup,
+  sessionTimeout: 30000,
+  heartbeatInterval: 3000,
+  maxBytesPerPartition: 1048576, // 1MB
+  retry: {
+    retries: 10,
+    initialRetryTime: 1000,
+    maxRetryTime: 30000
+  }
+});
+
+// Start consuming with concurrency control
+await consumer.run({
+  partitionsConsumedConcurrently: 1, // configurable
+  eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
+    await this._handleIncomingMessage(
+      topic, partition, message, heartbeat, pause
+    );
+  }
+});</code></pre>
+                                    </div>
+                                    <div class="stats shadow mt-2">
+                                        <div class="stat">
+                                            <div class="stat-title">Max Concurrent</div>
+                                            <div class="stat-value text-secondary">3</div>
+                                            <div class="stat-desc">Messages (env: MAX_CONCURRENT_MESSAGES)</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Partition Concurrency</div>
+                                            <div class="stat-value text-primary">1</div>
+                                            <div class="stat-desc">Default sequential</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Status Report</div>
+                                            <div class="stat-value text-info">30s</div>
+                                            <div class="stat-desc">Processing stats</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">2</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Process Message with Concurrency Control</h3>
+                                    <p class="text-base-content/70">Manages concurrent message processing within
+                                        configured limits.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>// Concurrent processing with queue management
+await this.processor.processWithConcurrency(async () => {
+  await this._processItemWithDuplicationChecks(
+    messageData,
+    pause  // Can pause partition on error
+  );
+}, heartbeat);
+
+// Automatic heartbeat during long processing
+// Prevents consumer timeout/rebalancing</code></pre>
+                                    </div>
+                                    <div class="stats shadow mt-2">
+                                        <div class="stat">
+                                            <div class="stat-title">Active Tasks</div>
+                                            <div class="stat-value text-primary">2/3</div>
+                                            <div class="stat-desc">Processing</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Queue Length</div>
+                                            <div class="stat-value text-warning">5</div>
+                                            <div class="stat-desc">Waiting</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-title">Processed</div>
+                                            <div class="stat-value text-success">147</div>
+                                            <div class="stat-desc">Total</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">3</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Check Processing & Completion Status</h3>
+                                    <p class="text-base-content/70">Verifies processing status in Redis and completion
+                                        status in database before proceeding.</p>
+                                    <div class="grid md:grid-cols-2 gap-3 mt-2">
+                                        <div class="mockup-code">
+                                            <pre><code>// Step 2: Check Redis for processing
+const messageId = await this.getMessageId(messageData);
+const redisKey = `CONS:${prefix}:${messageId}`;
+
+if (await redis.exists(redisKey)) {
+  console.log('⏭️ Already processing in Redis');
+  return; // Skip this message
+}</code></pre>
+                                        </div>
+                                        <div class="mockup-code">
+                                            <pre><code>// Step 3: Check DB for completion
+if (await this.isItemCompleted(messageId)) {
+  console.log('✅ Already completed in DB');
+  return; // Skip this message
+}
+
+// Both checks passed - proceed
+console.log('🆕 New item to process');</code></pre>
+                                        </div>
+                                    </div>
+                                    <div class="stats shadow mt-2 w-full">
+                                        <div class="stat">
+                                            <div class="stat-figure text-warning">
+                                                <i class="w-8 h-8" data-lucide="database"></i>
+                                            </div>
+                                            <div class="stat-title">Redis Check</div>
+                                            <div class="stat-value text-lg">Processing?</div>
+                                            <div class="stat-desc">Prevents concurrent work</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-figure text-success">
+                                                <i class="w-8 h-8" data-lucide="check-circle"></i>
+                                            </div>
+                                            <div class="stat-title">DB Check</div>
+                                            <div class="stat-value text-lg">Completed?</div>
+                                            <div class="stat-desc">Prevents re-processing</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">4</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Set Virtual Processing State in Redis</h3>
+                                    <p class="text-base-content/70">Sets temporary processing flag in Redis with
+                                        configured TTL value.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>// Mark as processing with configurable TTL
+await this._startProcessing(messageId);
+
+// Sets Redis key: CONS:PREFIX:messageId
+await this.redisService.setProcessingKey(
+  messageId,
+  300  // 5 minute TTL (configurable)
+);
+
+// Virtual state benefits:
+// ✅ No DB pollution
+// ✅ Auto-expires on crash
+// ✅ Clean recovery</code></pre>
+                                    </div>
+                                    <div class="alert alert-info mt-2">
+                                        <i class="w-5 h-5" data-lucide="lightbulb"></i>
+                                        <div>
+                                            <p class="font-semibold">Virtual State Pattern</p>
+                                            <p class="text-sm">Processing state maintained in Redis memory without
+                                                database persistence</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">5</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Execute Business Logic & Handle Errors</h3>
+                                    <p class="text-base-content/70">Executes business logic with error handling and
+                                        recovery mechanisms.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>try {
+  // Execute your business logic
+  const result = await this.process(messageData);
+  
+  // Handle success
+  await this._handleProcessingSuccess(messageId, result);
+  
+} catch (error) {
+  // Intelligent error handling
+  if (this._shouldPausePartitionOnError(error)) {
+    // Pause partition for critical errors
+    await pause();
+    console.log(`⏸️ Pausing partition: ${error.message}`);
+  }
+  
+  // Handle failure
+  await this._handleProcessingFailure(messageId, error);
+  
+  // Recovery delay based on error type
+  const delay = this._getErrorRecoveryDelay(error);
+  await new Promise(resolve => setTimeout(resolve, delay));
+}</code></pre>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 mt-2">
+                                        <div class="badge badge-info gap-2">
+                                            <i class="w-4 h-4" data-lucide="pause-circle"></i>
+                                            Auto-pause on errors
+                                        </div>
+                                        <div class="badge badge-warning gap-2">
+                                            <i class="w-4 h-4" data-lucide="clock"></i>
+                                            Smart recovery delays
+                                        </div>
+                                        <div class="badge badge-error gap-2">
+                                            <i class="w-4 h-4" data-lucide="shield-alert"></i>
+                                            Error categorization
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">6</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Update Database State & Handle Results</h3>
+                                    <p class="text-base-content/70">Updates database with processing outcome and result
+                                        data.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>// Success path
+if (success) {
+  // Mark as completed (your implementation)
+  await this.markItemAsCompleted(messageId);
+  
+  // Handle processing result (optional)
+  if (result) {
+    await this.handleProcessingResult?.(messageId, result);
+  }
+  
+  // Success callback
+  await this.onSuccess?.(messageId);
+}
+
+// Failure path
+else {
+  // Mark as failed (your implementation)
+  await this.markItemAsFailed(messageId);
+  
+  // Failure callback with error details
+  await this.onFailed?.(messageId, error);
+}</code></pre>
+                                    </div>
+                                    <div class="stats shadow mt-2">
+                                        <div class="stat">
+                                            <div class="stat-figure text-success">
+                                                <i class="w-8 h-8" data-lucide="check-circle"></i>
+                                            </div>
+                                            <div class="stat-title">Success</div>
+                                            <div class="stat-value text-sm">markItemAsCompleted</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-figure text-error">
+                                                <i class="w-8 h-8" data-lucide="x-circle"></i>
+                                            </div>
+                                            <div class="stat-title">Failure</div>
+                                            <div class="stat-value text-sm">markItemAsFailed</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-item opacity-0">
+                            <div class="flex gap-4">
+                                <div class="badge badge-secondary badge-lg">7</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">Cleanup Virtual Processing State</h3>
+                                    <p class="text-base-content/70">Removes processing flag from Redis after operation
+                                        completion.</p>
+                                    <div class="mockup-code mt-2">
+                                        <pre><code>// Cleanup in finally block - always executes
+await this._cleanupProcessing(messageId);
+
+// Removes Redis key: CONS:PREFIX:messageId
+await this.redisService.deleteProcessingKey(messageId);
+
+// Ensures:
+// ✅ No stuck items after crashes (TTL backup)
+// ✅ Failed items can be retried
+// ✅ Clean Redis state
+// ✅ Prevents memory leaks</code></pre>
+                                    </div>
+                                    <div class="alert alert-success mt-2">
+                                        <i class="w-5 h-5" data-lucide="recycle"></i>
+                                        <div>
+                                            <p class="font-semibold">Cleanup Mechanism</p>
+                                            <p class="text-sm">Redis TTL ensures automatic key expiration on process
+                                                failure</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Reporting & Monitoring -->
+            <div class="card bg-info/10 border-info shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="activity"></i>
+                        Real-time Status Reporting
+                    </h2>
+                    <p class="text-base-content/70 mb-4">Status reports generated at 30-second intervals (configurable
+                        parameter).</p>
+                    <div class="mockup-code mb-4">
+                        <pre><code>📊 EmailConsumer Status Report:
+╔═══════════════════════════════════════════════════════════╗
+║ Active Tasks:    2/3        (66.67% capacity)             ║
+║ Queue Length:    5          (waiting for slot)            ║
+║ Total Processed: 1,247      (41.57/min average)           ║
+║ Success Rate:    98.2%      (23 failures)                 ║
+║ Uptime:         00:30:00   (started 10:45 AM)            ║
+╚═══════════════════════════════════════════════════════════╝
+
+Active Partitions: [0, 1, 2, 3]
+Last Error: "SMTP timeout" (2 minutes ago)
+Memory Usage: 124MB / 512MB (24.2%)</code></pre>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="stat bg-base-100 rounded-xl">
+                            <div class="stat-figure text-primary">
+                                <i class="w-6 h-6" data-lucide="bar-chart-3"></i>
+                            </div>
+                            <div class="stat-title text-sm">Throughput</div>
+                            <div class="stat-value text-lg">41.57/min</div>
+                            <div class="stat-desc">Messages processed</div>
+                        </div>
+                        <div class="stat bg-base-100 rounded-xl">
+                            <div class="stat-figure text-success">
+                                <i class="w-6 h-6" data-lucide="trending-up"></i>
+                            </div>
+                            <div class="stat-title text-sm">Success Rate</div>
+                            <div class="stat-value text-lg">98.2%</div>
+                            <div class="stat-desc">23 failures</div>
+                        </div>
+                        <div class="stat bg-base-100 rounded-xl">
+                            <div class="stat-figure text-warning">
+                                <i class="w-6 h-6" data-lucide="cpu"></i>
+                            </div>
+                            <div class="stat-title text-sm">Capacity</div>
+                            <div class="stat-value text-lg">66.67%</div>
+                            <div class="stat-desc">2 of 3 slots</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consumer Key Features -->
+            <div class="card bg-base-100 shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="settings"></i>
+                        Consumer Specifications
+                    </h2>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="stat bg-secondary/10 rounded-xl">
+                            <div class="stat-figure text-secondary">
+                                <i class="w-8 h-8" data-lucide="cloud"></i>
+                            </div>
+                            <div class="stat-title">State Management</div>
+                            <div class="stat-value text-2xl">Virtual</div>
+                            <div class="stat-desc">Redis-only processing</div>
+                        </div>
+
+                        <div class="stat bg-primary/10 rounded-xl">
+                            <div class="stat-figure text-primary">
+                                <i class="w-8 h-8" data-lucide="cpu"></i>
+                            </div>
+                            <div class="stat-title">Concurrency</div>
+                            <div class="stat-value text-2xl">Managed</div>
+                            <div class="stat-desc">Configurable parallelism</div>
+                        </div>
+
+                        <div class="stat bg-success/10 rounded-xl">
+                            <div class="stat-figure text-success">
+                                <i class="w-8 h-8" data-lucide="shield-check"></i>
+                            </div>
+                            <div class="stat-title">Recovery</div>
+                            <div class="stat-value text-2xl">Auto</div>
+                            <div class="stat-desc">TTL-based cleanup</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Handling & Recovery -->
+            <div class="card bg-error/10 border-error shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="shield-alert"></i>
+                        Error Handling Configuration
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Pausable Errors</h3>
+                            <p class="text-sm text-base-content/70 mb-3">Critical errors trigger automatic partition
+                                pause</p>
+                            <div class="space-y-2">
+                                <div class="badge badge-error gap-2 w-full justify-start">
+                                    <i class="w-4 h-4" data-lucide="database"></i>
+                                    DatabaseConnectionError
+                                </div>
+                                <div class="badge badge-error gap-2 w-full justify-start">
+                                    <i class="w-4 h-4" data-lucide="server"></i>
+                                    ServiceUnavailableError
+                                </div>
+                                <div class="badge badge-error gap-2 w-full justify-start">
+                                    <i class="w-4 h-4" data-lucide="gauge"></i>
+                                    RateLimitExceededError
+                                </div>
+                                <div class="badge badge-error gap-2 w-full justify-start">
+                                    <i class="w-4 h-4" data-lucide="zap-off"></i>
+                                    CircuitBreakerOpenError
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Recovery Delays</h3>
+                            <p class="text-sm text-base-content/70 mb-3">Error-specific delay intervals configured by
+                                type</p>
+                            <div class="mockup-code">
+                                <pre><code>// Error type detection & delays
+if (isRateLimitError(error)) {
+  delay = 30000; // 30 seconds
+} else if (isNetworkError(error)) {
+  delay = 10000; // 10 seconds
+} else if (isDatabaseError(error)) {
+  delay = 5000;  // 5 seconds
+} else {
+  delay = 2000;  // 2 seconds default
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2">Partition Pause Flow</h3>
+                        <div class="steps steps-vertical lg:steps-horizontal w-full">
+                            <div class="step step-primary">
+                                <div class="step-content">
+                                    <p class="text-xs">Critical Error</p>
+                                    <p class="font-semibold">Detected</p>
+                                </div>
+                            </div>
+                            <div class="step step-warning">
+                                <div class="step-content">
+                                    <p class="text-xs">Partition</p>
+                                    <p class="font-semibold">Paused</p>
+                                </div>
+                            </div>
+                            <div class="step step-info">
+                                <div class="step-content">
+                                    <p class="text-xs">Recovery</p>
+                                    <p class="font-semibold">Delay</p>
+                                </div>
+                            </div>
+                            <div class="step step-success">
+                                <div class="step-content">
+                                    <p class="text-xs">Auto</p>
+                                    <p class="font-semibold">Resume</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Virtual State Deep Dive -->
+            <div class="card bg-warning/10 border-warning shadow-xl mt-6">
+                <div class="card-body">
+                    <h2 class="card-title text-xl mb-4">
+                        <i class="w-6 h-6" data-lucide="layers-3"></i>
+                        Virtual Processing State Deep Dive
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">How It Works</h3>
+                            <div class="space-y-3">
+                                <div class="flex gap-3">
+                                    <div class="badge badge-lg">1</div>
+                                    <div>
+                                        <p class="font-semibold">Message Received</p>
+                                        <p class="text-sm text-base-content/70">Consumer pulls message from Kafka
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <div class="badge badge-lg">2</div>
+                                    <div>
+                                        <p class="font-semibold">Redis Key Set</p>
+                                        <p class="text-sm text-base-content/70">CONS:PREFIX:ID with TTL (e.g., 5
+                                            min)</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <div class="badge badge-lg">3</div>
+                                    <div>
+                                        <p class="font-semibold">Processing</p>
+                                        <p class="text-sm text-base-content/70">Business logic executes</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <div class="badge badge-lg">4</div>
+                                    <div>
+                                        <p class="font-semibold">Key Removed</p>
+                                        <p class="text-sm text-base-content/70">Cleanup on completion or TTL expiry
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-2">Benefits Over DB State</h3>
+                            <div class="mockup-code">
+                                <pre><code>// Traditional DB approach ❌
+await db.updateOne(
+  { _id: id },
+  { state: 'PROCESSING' }
+);
+// Problem: Stuck forever on crash
+
+// Virtual state approach ✅
+await redis.setex(
+  \`CONS:EMAIL:\${id}\`,
+  300, // 5 min TTL
+  '1'
+);
+// Auto-cleanup on crash!</code></pre>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="w-5 h-5" data-lucide="info"></i>
+                                <span class="text-sm">TTL should be longer than max processing time</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <!-- Virtual State Explanation -->
+    <div class="card bg-warning/10 border-warning shadow-xl mt-6">
+        <div class="card-body">
+            <h2 class="card-title text-xl mb-4">
+                <i class="w-6 h-6" data-lucide="lightbulb"></i>
+                Understanding Virtual Processing State
+            </h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-lg mb-2">Traditional Approach ❌</h3>
+                    <ul class="space-y-2">
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-error mt-0.5" data-lucide="x"></i>
+                            <span>Stores PROCESSING state in database</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-error mt-0.5" data-lucide="x"></i>
+                            <span>Items can get stuck if system crashes</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-error mt-0.5" data-lucide="x"></i>
+                            <span>Requires cleanup jobs for orphaned items</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-error mt-0.5" data-lucide="x"></i>
+                            <span>Extra database writes impact performance</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg mb-2">Virtual State Approach ✅</h3>
+                    <ul class="space-y-2">
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-success mt-0.5" data-lucide="check"></i>
+                            <span>PROCESSING state only in Redis (memory)</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-success mt-0.5" data-lucide="check"></i>
+                            <span>Automatic cleanup with Redis TTL</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-success mt-0.5" data-lucide="check"></i>
+                            <span>No stuck items after crashes</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <i class="w-5 h-5 text-success mt-0.5" data-lucide="check"></i>
+                            <span>Better performance, less DB load</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </section>
+
+    <!-- System Section -->
+    <section class="content-section" id="system">
+        <!-- Producer-Consumer Interaction Flow -->
+        <div class="card bg-gradient-to-br from-purple/10 to-blue/10 shadow-xl mb-6">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-2xl mb-0">
+                        <i class="w-6 h-6" data-lucide="network"></i>
+                        System Architecture Diagram
+                    </h2>
+                    <button class="btn btn-primary btn-sm" onclick="replayCompleteFlow()">
+                        <i class="w-4 h-4" data-lucide="refresh-cw"></i>
+                        Replay Animation
+                    </button>
+                </div>
+
+                <svg class="w-full" id="complete-flow-svg" style="max-height: 950px;" viewBox="0 0 1600 950">
+                    <!-- Background -->
+                    <rect fill="#f9fafb" height="930" rx="15" stroke="#e5e7eb" stroke-width="1" width="1580" x="10"
+                        y="10" />
+
+                    <!-- Title -->
+                    <text class="fill-base-content font-bold text-2xl" text-anchor="middle" x="800" y="40">System
+                        Architecture Overview</text>
+
+                    <!-- PRODUCER FLOW SECTION -->
+                    <g id="producer-flow-section" transform="translate(50, 80)">
+                        <text class="fill-base-content font-bold text-xl" x="0" y="0">Producer Flow</text>
+
+                        <!-- Producer Flow - Horizontal Layout -->
+                        <!-- Row 1 -->
+                        <g id="step1-scheduler" transform="translate(0, 40)">
+                            <rect fill="#fbbf24" height="70" rx="8" stroke="#f59e0b" stroke-width="2" width="140" />
+                            <text class="fill-base-content font-bold" text-anchor="middle" x="70" y="25">1. Cron</text>
+                            <text class="fill-base-content text-sm" text-anchor="middle" x="70" y="45">Scheduler</text>
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="70" y="60">* * * * *</text>
+                        </g>
+
+                        <g id="step2-producer" transform="translate(180, 40)">
+                            <rect fill="#60a5fa" height="70" rx="8" stroke="#3b82f6" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="25">2. Producer</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="70" y="45">Start</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="60">Batch: 100</text>
+                        </g>
+
+                        <g id="step3-redis-check" transform="translate(360, 40)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">3. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Get Excluded</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">CONS:*</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">SENT:*</text>
+                        </g>
+
+                        <g id="step4-database" transform="translate(540, 40)">
+                            <rect fill="#4ade80" height="70" rx="8" stroke="#22c55e" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="25">4. Database</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="70" y="45">Query</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="60">PENDING</text>
+                        </g>
+
+                        <g id="step5-hash-check" transform="translate(720, 40)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">5. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Hash Check</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">Compare</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">Skip if same</text>
+                        </g>
+
+                        <g id="step6-kafka-send" transform="translate(900, 40)">
+                            <rect fill="#a78bfa" height="70" rx="8" stroke="#8b5cf6" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="25">6. Kafka</text>
+                            <text class="fill-white text-sm" text-anchor="middle" x="70" y="45">Send</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="60">acks=-1</text>
+                        </g>
+
+                        <g id="step7-mark-sent" transform="translate(1080, 40)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">7. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Mark Sent</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">SETEX</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">TTL: 120s</text>
+                        </g>
+                    </g>
+
+                    <!-- KAFKA TOPIC -->
+                    <g id="kafka-topic-section" transform="translate(100, 250)">
+                        <rect fill="#e9d5ff" height="140" rx="15" stroke="#9333ea" stroke-width="3" width="1100" />
+                        <text class="fill-base-content font-bold text-xl" text-anchor="middle" x="550" y="30">Kafka
+                            Topic</text>
+
+                        <!-- Partitions with messages -->
+                        <g transform="translate(50, 50)">
+                            <g id="kafka-partition-0">
+                                <rect fill="#a78bfa" height="50" rx="6" stroke="#8b5cf6" stroke-width="2" width="240"
+                                    x="0" y="0" />
+                                <text class="fill-white font-semibold" text-anchor="middle" x="120" y="20">Partition
+                                    0</text>
+                                <g transform="translate(20, 25)">
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="0"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="50"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="100"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="150"
+                                        y="0" />
+                                </g>
+                            </g>
+
+                            <g id="kafka-partition-1">
+                                <rect fill="#a78bfa" height="50" rx="6" stroke="#8b5cf6" stroke-width="2" width="240"
+                                    x="260" y="0" />
+                                <text class="fill-white font-semibold" text-anchor="middle" x="380" y="20">Partition
+                                    1</text>
+                                <g transform="translate(280, 25)">
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="0"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="50"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="100"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="150"
+                                        y="0" />
+                                </g>
+                            </g>
+
+                            <g id="kafka-partition-2">
+                                <rect fill="#a78bfa" height="50" rx="6" stroke="#8b5cf6" stroke-width="2" width="240"
+                                    x="520" y="0" />
+                                <text class="fill-white font-semibold" text-anchor="middle" x="640" y="20">Partition
+                                    2</text>
+                                <g transform="translate(540, 25)">
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="0"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="50"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="100"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="150"
+                                        y="0" />
+                                </g>
+                            </g>
+
+                            <g id="kafka-partition-3">
+                                <rect fill="#a78bfa" height="50" rx="6" stroke="#8b5cf6" stroke-width="2" width="240"
+                                    x="780" y="0" />
+                                <text class="fill-white font-semibold" text-anchor="middle" x="900" y="20">Partition
+                                    3</text>
+                                <g transform="translate(800, 25)">
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="0"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="50"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="100"
+                                        y="0" />
+                                    <rect class="msg opacity-0" fill="#fbbf24" height="18" rx="3" width="40" x="150"
+                                        y="0" />
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- CONSUMER FLOW SECTION -->
+                    <g id="consumer-flow-section" transform="translate(50, 470)">
+                        <text class="fill-base-content font-bold text-xl" x="0" y="0">Consumer Flow</text>
+
+                        <!-- Consumer Flow - Two Rows -->
+                        <!-- Row 1 -->
+                        <g id="step8-pull" transform="translate(0, 40)">
+                            <rect fill="#60a5fa" height="70" rx="8" stroke="#3b82f6" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">8. Consumer</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Group</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">Pull Messages</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">Partitions</text>
+                        </g>
+
+                        <g id="step9-check-processing" transform="translate(180, 40)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">9. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Check 1</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">EXISTS</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">CONS:*:id</text>
+                        </g>
+
+                        <g id="step10-check-db" transform="translate(360, 40)">
+                            <rect fill="#4ade80" height="70" rx="8" stroke="#22c55e" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">10. DB</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Check 2</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">Already</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">Completed?</text>
+                        </g>
+
+                        <g id="step11-set-processing" transform="translate(540, 40)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">11. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Set State</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">SETEX</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">TTL: 300s</text>
+                        </g>
+
+                        <!-- Row 2 -->
+                        <g id="step12-process" transform="translate(540, 140)">
+                            <rect fill="#6366f1" height="70" rx="8" stroke="#4f46e5" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">12. Process</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Business</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">Logic</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">Execute</text>
+                        </g>
+
+                        <g id="step13-update-db" transform="translate(360, 140)">
+                            <rect fill="#4ade80" height="70" rx="8" stroke="#22c55e" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">13. DB</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Update</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">COMPLETED</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">or FAILED</text>
+                        </g>
+
+                        <g id="step14-cleanup" transform="translate(180, 140)">
+                            <rect fill="#f87171" height="70" rx="8" stroke="#ef4444" stroke-width="2" width="140" />
+                            <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">14. Redis</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Cleanup</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">DEL</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">CONS:*:id</text>
+                        </g>
+                    </g>
+
+                    <!-- REDIS SHARED STATE -->
+                    <g id="redis-state-section" transform="translate(1300, 80)">
+                        <rect fill="#fef3c7" height="620" rx="12" stroke="#f59e0b" stroke-width="2" width="250" />
+                        <text class="fill-base-content font-bold text-lg" text-anchor="middle" x="125" y="30">Redis
+                            Shared State</text>
+
+                        <g transform="translate(20, 60)">
+                            <text class="fill-base-content font-semibold" x="0" y="0">Producer Keys:</text>
+                            <rect fill="#fee2e2" height="50" rx="6" width="210" x="0" y="10" />
+                            <text class="fill-base-content text-xs" x="10" y="30">EMAIL_SENT:id123 → "hash"</text>
+                            <text class="fill-error text-xs font-semibold" x="10" y="45">TTL: 120 seconds</text>
+                        </g>
+
+                        <g transform="translate(20, 130)">
+                            <text class="fill-base-content font-semibold" x="0" y="0">Consumer Keys:</text>
+                            <rect fill="#dbeafe" height="50" rx="6" width="210" x="0" y="10" />
+                            <text class="fill-base-content text-xs" x="10" y="30">CONS:EMAIL:id789 → "1"</text>
+                            <text class="fill-primary text-xs font-semibold" x="10" y="45">TTL: 300 seconds</text>
+                        </g>
+
+                        <g transform="translate(20, 200)">
+                            <text class="fill-base-content font-semibold" x="0" y="0">Coordination:</text>
+                            <text class="fill-base-content text-xs" x="0" y="20">• Producer reads CONS:*</text>
+                            <text class="fill-base-content text-xs" x="0" y="35">• Consumer reads SENT:*</text>
+                            <text class="fill-base-content text-xs" x="0" y="50">• No direct comms needed</text>
+                        </g>
+                    </g>
+
+                    <!-- Flow Arrows - Clean horizontal/vertical only -->
+                    <!-- Producer flow arrows -->
+                    <g id="producer-arrows">
+                        <path class="flow-arrow opacity-0" d="M 190 125 L 230 125" id="arrow-1-2"
+                            marker-end="url(#arrowhead-small)" stroke="#f59e0b" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 370 125 L 410 125" id="arrow-2-3"
+                            marker-end="url(#arrowhead-small)" stroke="#3b82f6" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 550 125 L 590 125" id="arrow-3-4"
+                            marker-end="url(#arrowhead-small)" stroke="#ef4444" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 730 125 L 770 125" id="arrow-4-5"
+                            marker-end="url(#arrowhead-small)" stroke="#22c55e" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 910 125 L 950 125" id="arrow-5-6"
+                            marker-end="url(#arrowhead-small)" stroke="#ef4444" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 1090 125 L 1130 125" id="arrow-6-7"
+                            marker-end="url(#arrowhead-small)" stroke="#8b5cf6" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 1020 150 L 1020 250" id="arrow-7-kafka"
+                            marker-end="url(#arrowhead-small)" stroke="#a78bfa" stroke-width="3" />
+                    </g>
+
+                    <!-- Kafka to Consumer arrow -->
+                    <path class="flow-arrow opacity-0" d="M 650 390 L 120 510" id="arrow-kafka-8"
+                        marker-end="url(#arrowhead-small)" stroke="#3b82f6" stroke-width="3" stroke-dasharray="5,5" />
+
+                    <!-- Consumer flow arrows -->
+                    <g id="consumer-arrows">
+                        <path class="flow-arrow opacity-0" d="M 190 545 L 230 545" id="arrow-8-9"
+                            marker-end="url(#arrowhead-small)" stroke="#60a5fa" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 370 545 L 410 545" id="arrow-9-10"
+                            marker-end="url(#arrowhead-small)" stroke="#ef4444" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 550 545 L 590 545" id="arrow-10-11"
+                            marker-end="url(#arrowhead-small)" stroke="#22c55e" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 660 580 L 660 610" id="arrow-11-12"
+                            marker-end="url(#arrowhead-small)" stroke="#ef4444" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 590 680 L 550 680" id="arrow-12-13"
+                            marker-end="url(#arrowhead-small)" stroke="#6366f1" stroke-width="2" />
+                        <path class="flow-arrow opacity-0" d="M 410 680 L 370 680" id="arrow-13-14"
+                            marker-end="url(#arrowhead-small)" stroke="#22c55e" stroke-width="2" />
+                    </g>
+
+                    <!-- Redis coordination lines -->
+                    <g id="redis-lines">
+                        <path class="redis-line opacity-0" d="M 430 125 L 1300 125" stroke="#f59e0b"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                        <path class="redis-line opacity-0" d="M 790 125 L 1300 125" stroke="#f59e0b"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                        <path class="redis-line opacity-0" d="M 1150 125 L 1300 125" stroke="#f59e0b"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                        <path class="redis-line opacity-0" d="M 250 545 L 1300 180" stroke="#3b82f6"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                        <path class="redis-line opacity-0" d="M 610 545 L 1300 180" stroke="#3b82f6"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                        <path class="redis-line opacity-0" d="M 250 680 L 1300 180" stroke="#3b82f6"
+                            stroke-dasharray="3,3" stroke-width="1" opacity="0.3" />
+                    </g>
+
+                    <!-- Arrow markers -->
+                    <defs>
+                        <marker id="arrowhead-small" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
+                            <path d="M0,0 L0,8 L8,4 z" fill="currentColor" />
+                        </marker>
+                    </defs>
+
+                    <!-- Animated flow dots -->
+                    <g id="flow-dots-complete" class="opacity-0">
+                        <!-- Producer flow dots -->
+                        <circle fill="#f59e0b" r="6">
+                            <animateMotion begin="0s" dur="8s" repeatCount="indefinite">
+                                <mpath href="#producer-flow-path" />
+                            </animateMotion>
+                        </circle>
+
+                        <!-- Consumer flow dots -->
+                        <circle fill="#3b82f6" r="6">
+                            <animateMotion begin="3s" dur="8s" repeatCount="indefinite">
+                                <mpath href="#consumer-flow-path" />
+                            </animateMotion>
+                        </circle>
+                    </g>
+
+                    <!-- Flow paths for animation -->
+                    <defs>
+                        <path d="M 120 125 L 1270 125 L 1020 250 L 1020 320" id="producer-flow-path" />
+                        <path d="M 650 390 L 120 510 L 120 545 L 730 545 L 660 580 L 660 680 L 230 680"
+                            id="consumer-flow-path" />
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Component Deep Dive -->
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">
+                    <i class="w-6 h-6" data-lucide="puzzle"></i>
+                    System Components Deep Dive
+                </h2>
+
+                <div role="tablist" class="tabs tabs-lifted">
+                    <input type="radio" name="component_tabs" class="tab" aria-label="Kafka Cluster" checked />
+                    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <h3 class="font-bold text-lg mb-3">Apache Kafka Cluster Configuration</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="mockup-code">
+                                <pre><code># Broker Configuration
+num.network.threads=8
+num.io.threads=8
+socket.send.buffer.bytes=102400
+socket.receive.buffer.bytes=102400
+socket.request.max.bytes=104857600
+
+# Replication
+default.replication.factor=2
+min.insync.replicas=2
+unclean.leader.election.enable=false
+
+# Log Configuration
+log.retention.hours=168
+log.segment.bytes=1073741824
+log.retention.check.interval.ms=300000</code></pre>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-2">Key Design Decisions</h4>
+                                <ul class="space-y-2">
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-info" data-lucide="info"></i>
+                                        <span class="text-sm"><strong>Partitions:</strong> 4 per topic for
+                                            parallelism</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-info" data-lucide="info"></i>
+                                        <span class="text-sm"><strong>Replication:</strong> Factor 2 for high
+                                            availability</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-info" data-lucide="info"></i>
+                                        <span class="text-sm"><strong>Retention:</strong> 7 days for replay
+                                            capability</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-info" data-lucide="info"></i>
+                                        <span class="text-sm"><strong>Compression:</strong> GZIP for network
+                                            efficiency</span>
+                                    </li>
+                                </ul>
+                                <div class="alert alert-warning mt-4">
+                                    <i class="w-5 h-5" data-lucide="alert-triangle"></i>
+                                    <span class="text-sm">Ensure min.insync.replicas ≤ replication.factor</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="radio" name="component_tabs" class="tab" aria-label="Redis Cluster" />
+                    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <h3 class="font-bold text-lg mb-3">Redis Cluster Architecture</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold mb-2">Key Patterns Used</h4>
+                                <div class="space-y-3">
+                                    <div class="bg-base-200 p-3 rounded">
+                                        <p class="font-semibold text-sm">Processing Keys</p>
+                                        <code class="text-xs">CONS:PREFIX:itemId</code>
+                                        <p class="text-xs mt-1">TTL: 300s (5 minutes)</p>
+                                    </div>
+                                    <div class="bg-base-200 p-3 rounded">
+                                        <p class="font-semibold text-sm">Sent Message Keys</p>
+                                        <code class="text-xs">PREFIX_SENT:itemId</code>
+                                        <p class="text-xs mt-1">TTL: 120s (2 minutes)</p>
+                                    </div>
+                                    <div class="bg-base-200 p-3 rounded">
+                                        <p class="font-semibold text-sm">Message Hash Storage</p>
+                                        <code class="text-xs">Value: md5(id+content+state)</code>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-2">Cluster Benefits</h4>
+                                <ul class="space-y-2">
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-success" data-lucide="zap"></i>
+                                        <span class="text-sm">Sub-millisecond latency for checks</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-success" data-lucide="shield"></i>
+                                        <span class="text-sm">Automatic failover with Sentinel</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-success" data-lucide="hard-drive"></i>
+                                        <span class="text-sm">Optional persistence for recovery</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <i class="w-5 h-5 text-success" data-lucide="clock"></i>
+                                        <span class="text-sm">TTL-based automatic cleanup</span>
+                                    </li>
+                                </ul>
+                                <div class="stats shadow mt-4">
+                                    <div class="stat">
+                                        <div class="stat-title text-xs">Typical Memory</div>
+                                        <div class="stat-value text-lg">~500MB</div>
+                                        <div class="stat-desc text-xs">For 1M keys</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-title text-xs">Operations</div>
+                                        <div class="stat-value text-lg">100K/s</div>
+                                        <div class="stat-desc text-xs">Per instance</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="radio" name="component_tabs" class="tab" aria-label="Scaling Strategy" />
+                    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+                        <h3 class="font-bold text-lg mb-3">Horizontal Scaling Strategy</h3>
+                        <div class="space-y-4">
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <div class="card bg-primary/10">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-base">Producer Scaling</h4>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Add producer instances</li>
+                                            <li>• No coordination needed</li>
+                                            <li>• Redis prevents duplicates</li>
+                                            <li>• Linear throughput increase</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card bg-secondary/10">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-base">Kafka Scaling</h4>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Add partitions (careful!)</li>
+                                            <li>• Add brokers for storage</li>
+                                            <li>• Increase replication</li>
+                                            <li>• Topic-level tuning</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card bg-success/10">
+                                    <div class="card-body">
+                                        <h4 class="card-title text-base">Consumer Scaling</h4>
+                                        <ul class="text-sm space-y-1">
+                                            <li>• Max = partition count</li>
+                                            <li>• Auto-rebalancing</li>
+                                            <li>• Increase concurrency</li>
+                                            <li>• Add consumer groups</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="w-5 h-5" data-lucide="lightbulb"></i>
+                                <div>
+                                    <p class="font-semibold">Scaling Rule of Thumb</p>
+                                    <p class="text-sm">Start with partitions = 2x expected consumer instances for growth
+                                        room</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Flow Steps -->
+        <div class="card bg-base-100 shadow-xl mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">
+                    <i class="w-6 h-6" data-lucide="git-pull-request"></i>
+                    Complete Flow Step-by-Step
+                </h2>
+
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold text-lg mb-3 text-primary">Producer Flow</h3>
+                        <ul class="steps steps-vertical">
+                            <li class="step step-primary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Query Database</p>
+                                    <p class="text-sm text-base-content/70">Fetch PENDING items with criteria</p>
+                                </div>
+                            </li>
+                            <li class="step step-primary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Check Redis Exclusions</p>
+                                    <p class="text-sm text-base-content/70">Get processing & sent IDs to exclude</p>
+                                </div>
+                            </li>
+                            <li class="step step-primary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Verify Content Hash</p>
+                                    <p class="text-sm text-base-content/70">Compare MD5 hash to prevent duplicates</p>
+                                </div>
+                            </li>
+                            <li class="step step-primary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Send to Kafka</p>
+                                    <p class="text-sm text-base-content/70">Batch send with stable keys & headers</p>
+                                </div>
+                            </li>
+                            <li class="step step-primary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Mark as Sent in Redis</p>
+                                    <p class="text-sm text-base-content/70">Store ID + hash with 120s TTL</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-lg mb-3 text-secondary">Consumer Flow</h3>
+                        <ul class="steps steps-vertical">
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Pull from Kafka</p>
+                                    <p class="text-sm text-base-content/70">Consumer group coordinates partitions</p>
+                                </div>
+                            </li>
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Check Processing State</p>
+                                    <p class="text-sm text-base-content/70">Verify not already processing in Redis</p>
+                                </div>
+                            </li>
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Check Completion State</p>
+                                    <p class="text-sm text-base-content/70">Verify not already completed in DB</p>
+                                </div>
+                            </li>
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Set Processing in Redis</p>
+                                    <p class="text-sm text-base-content/70">Virtual state with 300s TTL</p>
+                                </div>
+                            </li>
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Execute Business Logic</p>
+                                    <p class="text-sm text-base-content/70">Process message & update DB</p>
+                                </div>
+                            </li>
+                            <li class="step step-secondary">
+                                <div class="text-left ml-4">
+                                    <p class="font-semibold">Cleanup Redis</p>
+                                    <p class="text-sm text-base-content/70">Remove processing key</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Redis State Management -->
+        <div class="card bg-warning/10 border-warning shadow-xl mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">
+                    <i class="w-6 h-6" data-lucide="database"></i>
+                    Redis State Management Deep Dive
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold text-lg mb-3">Producer Redis Operations</h3>
+                        <div class="mockup-code">
+                            <pre><code># Step 1: Get excluded IDs
+KEYS CONS:EMAIL:*     → ["id1", "id2"]  # Processing
+KEYS EMAIL_SENT:*     → ["id3", "id4"]  # Recently sent
+excludedIds = [...new Set([...ids1, ...ids2])]
+
+# Step 2: Check if content changed
+GET EMAIL_SENT:id5    → "abc123..."     # Old hash
+newHash = md5(id + email + state)       # New hash
+if (oldHash === newHash) skip()
+
+# Step 3: After sending to Kafka
+SETEX EMAIL_SENT:id5 120 "xyz789..."    # Save new hash
+# Expires in 2 minutes</code></pre>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-3">Consumer Redis Operations</h3>
+                        <div class="mockup-code">
+                            <pre><code># Step 1: Check if processing
+EXISTS CONS:EMAIL:id5 → 0               # Not processing
+
+# Step 2: Set processing state
+SETEX CONS:EMAIL:id5 300 "1"           # Mark processing
+# Expires in 5 minutes (virtual state)
+
+# Step 3: After processing complete
+DEL CONS:EMAIL:id5                      # Remove key
+
+# If consumer crashes:
+# Key auto-expires after 5 minutes
+# Item becomes available for retry</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-6">
+                    <i class="w-5 h-5" data-lucide="lightbulb"></i>
+                    <div>
+                        <p class="font-semibold">Key Insight: Coordination Through Redis</p>
+                        <p class="text-sm mt-1">Redis acts as the coordination layer between Producer and Consumer:</p>
+                        <ul class="text-sm mt-2 ml-4 list-disc">
+                            <li>Producer writes <code>PREFIX_SENT:*</code> keys to mark items as sent</li>
+                            <li>Consumer reads these keys to avoid re-processing recently sent items</li>
+                            <li>Consumer writes <code>CONS:PREFIX:*</code> keys to mark items as processing</li>
+                            <li>Producer reads these keys to avoid sending items being processed</li>
+                            <li>TTLs ensure automatic cleanup without manual intervention</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kafka Partitioning Strategy -->
+        <div class="card bg-secondary/10 border-secondary shadow-xl mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">
+                    <i class="w-6 h-6" data-lucide="shuffle"></i>
+                    Kafka Partitioning & Message Distribution
+                </h2>
+
+                <div class="grid lg:grid-cols-3 gap-4">
+                    <div>
+                        <h4 class="font-semibold mb-2">Key Generation</h4>
+                        <div class="mockup-code">
+                            <pre><code>// Stable key format
+key = `${messageType}-${itemId}`
+// Example: "new-507f1f77bcf86cd799439011"
+
+// Partition assignment
+partition = hash(key) % partitionCount</code></pre>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Benefits</h4>
+                        <ul class="space-y-2">
+                            <li class="flex gap-2">
+                                <i class="w-5 h-5 text-success" data-lucide="check"></i>
+                                <span class="text-sm">Same item always goes to same partition</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="w-5 h-5 text-success" data-lucide="check"></i>
+                                <span class="text-sm">Ordered processing per item</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <i class="w-5 h-5 text-success" data-lucide="check"></i>
+                                <span class="text-sm">Even distribution across partitions</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Consumer Assignment</h4>
+                        <div class="badge badge-lg badge-primary gap-2 w-full mb-2">
+                            <i class="w-4 h-4" data-lucide="user"></i>
+                            Consumer 1 → Partitions 0, 1
+                        </div>
+                        <div class="badge badge-lg badge-primary gap-2 w-full mb-2">
+                            <i class="w-4 h-4" data-lucide="user"></i>
+                            Consumer 2 → Partitions 2, 3
+                        </div>
+                        <div class="badge badge-lg badge-ghost gap-2 w-full">
+                            <i class="w-4 h-4" data-lucide="user-x"></i>
+                            Consumer 3 → Idle (standby)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring & Observability -->
+        <div class="card bg-info/10 border-info shadow-xl mt-6">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">
+                    <i class="w-6 h-6" data-lucide="activity"></i>
+                    Monitoring & Observability
+                </h2>
+
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <h4 class="font-semibold mb-2">Metrics to Monitor</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>• Message production rate</li>
+                            <li>• Consumer lag per partition</li>
+                            <li>• Processing success/failure rates</li>
+                            <li>• Redis memory usage</li>
+                            <li>• Kafka disk usage</li>
+                            <li>• Processing duration p50/p95/p99</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Recommended Stack</h4>
+                        <ul class="text-sm space-y-1">
+                            <li>• <strong>Metrics:</strong> Prometheus + Grafana</li>
+                            <li>• <strong>Logs:</strong> ELK Stack or Loki</li>
+                            <li>• <strong>Traces:</strong> Jaeger or Zipkin</li>
+                            <li>• <strong>Kafka:</strong> Kafka Manager/UI</li>
+                            <li>• <strong>Alerts:</strong> AlertManager</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Key Dashboards</h4>
+                        <div class="space-y-2">
+                            <div class="badge badge-lg badge-primary gap-2 w-full">
+                                <i class="w-4 h-4" data-lucide="bar-chart"></i>
+                                System Overview
+                            </div>
+                            <div class="badge badge-lg badge-secondary gap-2 w-full">
+                                <i class="w-4 h-4" data-lucide="gauge"></i>
+                                Consumer Lag
+                            </div>
+                            <div class="badge badge-lg badge-success gap-2 w-full">
+                                <i class="w-4 h-4" data-lucide="activity"></i>
+                                Processing Stats
+                            </div>
+                            <div class="badge badge-lg badge-warning gap-2 w-full">
+                                <i class="w-4 h-4" data-lucide="alert-triangle"></i>
+                                Error Tracking
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Implementation Section -->
+    <section class="content-section" id="implementation">
+        <!-- Quick Start -->
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-4">
+                    <i class="w-6 h-6" data-lucide="code"></i>
+                    Implementation Examples
+                </h2>
+
+                <div class="tabs tabs-boxed mb-4">
+                    <a class="tab tab-active" onclick="showCodeExample('consumer')">Consumer Example</a>
+                    <a class="tab" onclick="showCodeExample('producer')">Producer Example</a>
+                    <a class="tab" onclick="showCodeExample('scheduler')">Scheduler Example</a>
+                </div>
+
+                <!-- Consumer Code Example -->
+                <div class="code-example" id="code-consumer">
+                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span
+                                class="hljs-keyword">const</span> <span
+                                class="hljs-class">AbstractConsumer</span> = <span class="hljs-function">require</span>(<span
+                                class="hljs-string">'./src/abstracts/AbstractConsumer'</span>);
+
+<span class="hljs-keyword">class</span> <span class="hljs-class">EmailConsumer</span> <span
+                                    class="hljs-keyword">extends</span> <span class="hljs-class">AbstractConsumer</span> {
+    <span class="hljs-comment">// Define your states (PROCESSING is virtual - not in DB)</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> <span
+                                    class="hljs-function">STATES</span>() {
+        <span class="hljs-keyword">return</span> {
+            PENDING: <span class="hljs-string">1</span>,    <span class="hljs-comment">// Ready to process</span>
+            COMPLETED: <span class="hljs-string">2</span>,  <span class="hljs-comment">// Successfully sent</span>
+            FAILED: <span class="hljs-string">3</span>      <span class="hljs-comment">// Failed to send</span>
+        };
+    }
+
+    <span class="hljs-function">constructor</span>() {
+        <span class="hljs-keyword">const</span> config = {
+            <span class="hljs-comment">// Required configuration</span>
+            topic: <span class="hljs-string">'email-queue'</span>,
+            consumerGroup: <span class="hljs-string">'email-processors'</span>,
+            redisKeyPrefix: <span class="hljs-string">'EMAIL'</span>,
+            
+            <span class="hljs-comment">// Optional: Topic auto-creation</span>
+            topicOptions: {
+                partitions: <span class="hljs-string">4</span>,
+                replicationFactor: <span class="hljs-string">2</span>,
+                configEntries: {
+                    <span class="hljs-string">'retention.ms'</span>: <span class="hljs-string">'604800000'</span>, <span
+                                    class="hljs-comment">// 7 days</span>
+                    <span class="hljs-string">'compression.type'</span>: <span class="hljs-string">'gzip'</span>
+                }
+            }
+        };
+        <span class="hljs-keyword">super</span>(config);
+        
+        <span class="hljs-comment">// Initialize your services</span>
+        <span class="hljs-keyword">this</span>.emailService = <span class="hljs-keyword">new</span> EmailService();
+    }
+
+    <span class="hljs-comment">// Extract ID from Kafka message</span>
+    <span class="hljs-function">getMessageId</span>(messageData) {
+        <span class="hljs-keyword">return</span> messageData.id;
+    }
+
+    <span class="hljs-comment">// Extract display key for logging</span>
+    <span class="hljs-function">getMessageKey</span>(messageData) {
+        <span class="hljs-keyword">return</span> messageData.data.recipient;
+    }
+
+    <span class="hljs-comment">// Your business logic - send the email</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">process</span>(messageData) {
+        <span class="hljs-keyword">const</span> { recipient, subject, body } = messageData.data;
+        
+        <span class="hljs-comment">// Send email using your service</span>
+        <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span
+                                    class="hljs-keyword">this</span>.emailService.send({
+            to: recipient,
+            subject: subject,
+            html: body
+        });
+        
+        <span class="hljs-keyword">return</span> result; <span class="hljs-comment">// Return result for handleProcessingResult</span>
+    }
+
+    <span class="hljs-comment">// Update database state to COMPLETED</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">markItemAsCompleted</span>(emailId) {
+        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+            { _id: emailId },
+            { state: EmailConsumer.STATES.COMPLETED, sentAt: <span class="hljs-keyword">new</span> Date() }
+        );
+    }
+
+    <span class="hljs-comment">// Update database state to FAILED</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">markItemAsFailed</span>(emailId) {
+        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+            { _id: emailId },
+            { state: EmailConsumer.STATES.FAILED, lastError: <span class="hljs-keyword">new</span> Date() }
+        );
+    }
+
+    <span class="hljs-comment">// Check if email was already sent</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">isItemCompleted</span>(emailId) {
+        <span class="hljs-keyword">const</span> email = <span class="hljs-keyword">await</span> EmailModel.findById(emailId);
+        <span class="hljs-keyword">return</span> email?.state === EmailConsumer.STATES.COMPLETED;
+    }
+
+    <span class="hljs-comment">// Optional: Save email provider response</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">handleProcessingResult</span>(emailId, result) {
+        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+            { _id: emailId },
+            { messageId: result.messageId, provider: result.provider }
+        );
+    }
+}
+
+<span class="hljs-comment">// Start the consumer</span>
+<span class="hljs-keyword">const</span> consumer = <span class="hljs-keyword">new</span> EmailConsumer();
+<span class="hljs-keyword">await</span> consumer.connect();
+<span class="hljs-keyword">await</span> consumer.startConsuming();</code></pre>
+                </div>
+
+                <!-- Producer Code Example -->
+                <div class="code-example hidden" id="code-producer">
+                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span
+                                class="hljs-keyword">const</span> <span
+                                class="hljs-class">AbstractProducer</span> = <span class="hljs-function">require</span>(<span
+                                class="hljs-string">'./src/abstracts/AbstractProducer'</span>);
+
+<span class="hljs-keyword">class</span> <span class="hljs-class">EmailProducer</span> <span
+                                    class="hljs-keyword">extends</span> <span class="hljs-class">AbstractProducer</span> {
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> <span
+                                    class="hljs-function">STATES</span>() {
+        <span class="hljs-keyword">return</span> {
+            PENDING: <span class="hljs-string">1</span>,
+            COMPLETED: <span class="hljs-string">2</span>,
+            FAILED: <span class="hljs-string">3</span>
+        };
+    }
+
+    <span class="hljs-function">constructor</span>() {
+        <span class="hljs-keyword">const</span> config = {
+            topic: <span class="hljs-string">'email-queue'</span>,
+            redisKeyPrefix: <span class="hljs-string">'EMAIL'</span>,
+            topicOptions: {
+                partitions: <span class="hljs-string">4</span>,
+                replicationFactor: <span class="hljs-string">2</span>
+            }
+        };
+        <span class="hljs-keyword">super</span>(config);
+    }
+
+    <span class="hljs-comment">// Fetch emails from your database</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">getNextProcessingItems</span>(criteria, limit, excludedIds) {
+        <span class="hljs-keyword">const</span> { state, priority } = criteria;
+        
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> EmailModel.find({
+            state: state,
+            priority: priority || { $exists: <span class="hljs-keyword">true</span> },
+            _id: { $nin: excludedIds }
+        })
+        .sort({ priority: <span class="hljs-string">-1</span>, createdAt: <span class="hljs-string">1</span> })
+        .limit(limit);
+    }
+
+    <span class="hljs-comment">// Extract email ID</span>
+    <span class="hljs-function">getItemId</span>(email) {
+        <span class="hljs-keyword">return</span> email._id.toString();
+    }
+
+    <span class="hljs-comment">// Extract display key for logging</span>
+    <span class="hljs-function">getItemKey</span>(email) {
+        <span class="hljs-keyword">return</span> email.recipient;
+    }
+
+    <span class="hljs-comment">// Convenience methods</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-function">producePendingEmails</span>(limit = <span
+                                    class="hljs-string">100</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span
+                                    class="hljs-keyword">this</span>.produceMessages(
+            { state: EmailProducer.STATES.PENDING, priority: <span class="hljs-string">'high'</span> },
+            limit,
+            <span class="hljs-string">'new'</span>
+        );
+    }
+
+    <span class="hljs-keyword">async</span> <span class="hljs-function">produceFailedEmails</span>(limit = <span
+                                    class="hljs-string">50</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span
+                                    class="hljs-keyword">this</span>.produceMessages(
+            { state: EmailProducer.STATES.FAILED },
+            limit,
+            <span class="hljs-string">'retry'</span>
+        );
+    }
+}</code></pre>
+                </div>
+
+                <!-- Scheduler Code Example -->
+                <div class="code-example hidden" id="code-scheduler">
+                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span
+                                class="hljs-keyword">const</span> cron = <span
+                                class="hljs-function">require</span>(<span class="hljs-string">'node-cron'</span>);
+<span class="hljs-keyword">const</span> <span class="hljs-class">EmailProducer</span> = <span class="hljs-function">require</span>(<span
+                                    class="hljs-string">'./EmailProducer'</span>);
+
+<span class="hljs-keyword">class</span> <span class="hljs-class">EmailScheduler</span> {
+    <span class="hljs-function">constructor</span>() {
+        <span class="hljs-keyword">this</span>.producer = <span class="hljs-keyword">new</span> EmailProducer();
+        <span class="hljs-keyword">this</span>.isRunning = <span class="hljs-keyword">false</span>;
+    }
+
+    <span class="hljs-keyword">async</span> <span class="hljs-function">start</span>() {
+        <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.producer.connect();
+        
+        <span class="hljs-comment">// Schedule new emails every minute</span>
+        cron.schedule(<span class="hljs-string">'* * * * *'</span>, <span class="hljs-keyword">async</span> () => {
+            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.isRunning) <span
+                                    class="hljs-keyword">return</span>;
+            
+            <span class="hljs-keyword">this</span>.isRunning = <span class="hljs-keyword">true</span>;
+            <span class="hljs-keyword">try</span> {
+                console.log(<span class="hljs-string">'📧 Checking for pending emails...'</span>);
+                <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span
+                                    class="hljs-keyword">this</span>.producer.producePendingEmails(<span
+                                    class="hljs-string">100</span>);
+                console.log(<span class="hljs-string">`✅ Produced ${result?.messages?.length || 0} email messages`</span>);
+            } <span class="hljs-keyword">catch</span> (error) {
+                console.error(<span class="hljs-string">'❌ Email production failed:'</span>, error);
+            } <span class="hljs-keyword">finally</span> {
+                <span class="hljs-keyword">this</span>.isRunning = <span class="hljs-keyword">false</span>;
+            }
+        });
+
+        <span class="hljs-comment">// Retry failed emails every 5 minutes</span>
+        cron.schedule(<span class="hljs-string">'*/5 * * * *'</span>, <span class="hljs-keyword">async</span> () => {
+            <span class="hljs-keyword">try</span> {
+                console.log(<span class="hljs-string">'🔄 Retrying failed emails...'</span>);
+                <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.producer.produceFailedEmails(<span
+                                    class="hljs-string">20</span>);
+            } <span class="hljs-keyword">catch</span> (error) {
+                console.error(<span class="hljs-string">'❌ Failed email retry error:'</span>, error);
+            }
+        });
+
+        console.log(<span class="hljs-string">'📅 Email scheduler started'</span>);
+    }
+
+    <span class="hljs-keyword">async</span> <span class="hljs-function">stop</span>() {
+        <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.producer.disconnect();
+        console.log(<span class="hljs-string">'📅 Email scheduler stopped'</span>);
+    }
+}
+
+<span class="hljs-comment">// Usage</span>
+<span class="hljs-keyword">const</span> scheduler = <span class="hljs-keyword">new</span> EmailScheduler();
+<span class="hljs-keyword">await</span> scheduler.start();
+
+<span class="hljs-comment">// Graceful shutdown</span>
+process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword">async</span> () => {
+    <span class="hljs-keyword">await</span> scheduler.stop();
+    process.exit(<span class="hljs-string">0</span>);
+});</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Method Reference -->
+        <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Consumer Methods -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">
+                        <i class="w-5 h-5" data-lucide="download"></i>
+                        Consumer Methods to Implement
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand getMessageId method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">getMessageId(messageData)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Extract unique identifier from Kafka message.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>getMessageId(messageData) {
+    return messageData.id;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand process method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">process(messageData)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Your main business logic. Process the message and return result.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async process(messageData) {
+    // Your business logic here
+    const result = await doWork(messageData);
+    return result;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand markItemAsCompleted method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">markItemAsCompleted(itemId)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Update database state to COMPLETED. Called after successful processing.</p>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand markItemAsFailed method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">markItemAsFailed(itemId)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Update database state to FAILED. Called when processing fails.</p>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand isItemCompleted method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">isItemCompleted(itemId)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Check if item is already completed to prevent reprocessing.</p>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand onSuccess method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-success">onSuccess(itemId)</code>
+                                <span class="badge badge-success badge-sm ml-2">Optional</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Hook called after successful processing. Use for logging, metrics, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Producer Methods -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">
+                        <i class="w-5 h-5" data-lucide="upload"></i>
+                        Producer Methods to Implement
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand getNextProcessingItems method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">getNextProcessingItems(criteria, limit, excludedIds)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Fetch items from your data source based on criteria.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async getNextProcessingItems(criteria, limit, excludedIds) {
+    const { state, priority } = criteria;
+    return await Model.find({
+        state: state,
+        _id: { $nin: excludedIds }
+    }).limit(limit);
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand getItemId method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">getItemId(item)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Extract unique identifier from database item.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>getItemId(item) {
+    return item._id.toString();
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand getItemKey method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">getItemKey(item)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Extract human-readable key for logging purposes.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>getItemKey(item) {
+    return item.name || item.email || item._id;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand producer onSuccess method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-success">onSuccess(itemId)</code>
+                                <span class="badge badge-success badge-sm ml-2">Optional</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Hook called after successfully sending message to Kafka.</p>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand onFailed method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-success">onFailed(itemId, error)</code>
+                                <span class="badge badge-success badge-sm ml-2">Optional</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Hook called when message sending fails.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class="alert alert-info shadow-lg mt-6">
+            <i class="w-6 h-6" data-lucide="info"></i>
+            <div>
+                <h3 class="font-bold">Implementation Requirements</h3>
+                <ul class="mt-2 space-y-1">
+                    <li>• Processing state management handled by Redis</li>
+                    <li>• Virtual state pattern - no database persistence required</li>
+                    <li>• Environment variables required for configuration</li>
+                    <li>• Automatic topic creation supported on connection</li>
+                    <li>• Error handling required in <code>process()</code> method</li>
+                </ul>
+            </div>
+        </div>
+        </div>
+    </section>
+    </div>
+
+    <script>
+        // Smooth scrolling to section
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Update active navigation item based on scroll position
+        function updateActiveNav() {
+            const sections = document.querySelectorAll('.content-section');
+            const navItems = document.querySelectorAll('.float-nav-item');
+
+            let activeSection = null;
+            const scrollPosition = window.scrollY + 100; // Add offset for better detection
+
+            // Find which section is currently in view
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionBottom = sectionTop + section.offsetHeight;
+
+                if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+                    activeSection = section.id;
+                }
+            });
+
+            // Update navigation active state
+            navItems.forEach(item => {
+                if (item.dataset.section === activeSection) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Trigger animations for the active section
+            if (activeSection && !document.getElementById(activeSection).dataset.animated) {
+                animateTab(activeSection);
+                document.getElementById(activeSection).dataset.animated = 'true';
+            }
+        }
+
+        // Initialize floating navigation
+        function initFloatingNav() {
+            // Add click handlers to navigation items
+            document.querySelectorAll('.float-nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const sectionId = item.dataset.section;
+                    scrollToSection(sectionId);
+                });
+            });
+
+            // Update active state on scroll
+            let scrollTimeout;
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(updateActiveNav, 50);
+            });
+
+            // Initial active state
+            updateActiveNav();
+        }
+
+        // Animate tab content
+        function animateTab(tabName) {
+            console.log('Animating tab:', tabName);
+
+            // Check if GSAP is loaded
+            if (typeof gsap === 'undefined') {
+                console.error('GSAP not loaded - animations will not work');
+                return;
+            }
+
+            if (tabName === 'producer') {
+                animateProducerFlow();
+            } else if (tabName === 'consumer') {
+                animateConsumerFlow();
+            } else if (tabName === 'system') {
+                animateSystemFlow();
+            }
+        }
+
+        // Producer animations
+        function animateProducerFlow() {
+            const timeline = gsap.timeline();
+
+            // Reset all elements first
+            gsap.set(["#prod-mongodb", "#prod-redis-get", "#prod-redis-save", "#prod-producer-node", "#prod-kafka"], { scale: 1, opacity: 1 });
+            gsap.set(["#prod-step-1", "#prod-step-2", "#prod-step-3", "#prod-step-4"], { opacity: 0 });
+            gsap.set("#producer-steps .step-item", { opacity: 0, x: -50 });
+            gsap.set("#flow-dots", { opacity: 0 });
+
+            // First, animate the components - SLOWER
+            timeline
+                .from("#prod-mongodb", { scale: 0, duration: 0.8, ease: "back.out" })
+                .from("#prod-redis-get", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#prod-redis-save", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#prod-producer-node", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#prod-kafka", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4");
+
+            // Then animate the flow arrows in sequence - SLOWER
+            timeline
+                .to("#prod-step-1", { opacity: 1, duration: 1, ease: "power2.inOut" })
+                .to("#prod-step-2", { opacity: 1, duration: 1, ease: "power2.inOut" }, "-=0.3")
+                .to("#prod-step-3", { opacity: 1, duration: 1, ease: "power2.inOut" }, "-=0.3")
+                .to("#prod-step-4", { opacity: 1, duration: 1, ease: "power2.inOut" }, "-=0.3");
+
+            // Animate the step descriptions - SLOWER
+            gsap.fromTo("#producer-steps .step-item",
+                { opacity: 0, x: -50 },
+                { opacity: 1, x: 0, duration: 0.8, stagger: 0.5, ease: "power2.out", delay: 0.8 }
+            );
+
+            // Add a pulsing effect to the current step being animated - SLOWER
+            timeline
+                .to("#prod-step-1 circle", { scale: 1.2, duration: 0.5, ease: "power2.inOut", repeat: 1, yoyo: true }, "-=4.5")
+                .to("#prod-step-2 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=3.5")
+                .to("#prod-step-3 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=2.5")
+                .to("#prod-step-4 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=1.5");
+
+            // Show the animated flow dots after all steps are visible - SLOWER
+            timeline.to("#flow-dots", { opacity: 1, duration: 0.8, ease: "power2.inOut" });
+
+            return timeline;
+        }
+
+        // Replay producer animation
+        function replayProducerAnimation() {
+            animateProducerFlow();
+        }
+
+        // Consumer animations
+        function animateConsumerFlow() {
+            const timeline = gsap.timeline();
+
+            // Reset all elements first
+            gsap.set(["#cons-kafka", "#cons-consumer-node", "#cons-redis-check", "#cons-redis-set", "#cons-redis-cleanup", "#cons-mongodb"], { scale: 1, opacity: 1 });
+            gsap.set(["#cons-step-1", "#cons-step-2", "#cons-step-3", "#cons-step-4", "#cons-step-5", "#cons-step-6", "#cons-step-7"], { opacity: 0 });
+            gsap.set("#consumer-steps .step-item", { opacity: 0, x: -50 });
+            gsap.set("#cons-flow-dots", { opacity: 0 });
+            gsap.set("#cons-db-check-box", { opacity: 0 });
+
+            // First, animate the components - SLOWER
+            timeline
+                .from("#cons-kafka", { scale: 0, duration: 0.8, ease: "back.out" })
+                .from("#cons-consumer-node", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#cons-redis-check", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#cons-redis-set", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#cons-redis-cleanup", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4")
+                .from("#cons-mongodb", { scale: 0, duration: 0.8, ease: "back.out" }, "-=0.4");
+
+            // Then animate the flow arrows in sequence - SLOWER
+            timeline
+                .to("#cons-step-1", { opacity: 1, duration: 0.8, ease: "power2.inOut" })
+                .to("#cons-step-2", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2")
+                .to("#cons-step-3", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2")
+                .to("#cons-db-check-box", { opacity: 1, duration: 0.6, ease: "power2.inOut" }, "-=0.7")
+                .to("#cons-step-4", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2")
+                .to("#cons-step-5", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2")
+                .to("#cons-step-6", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2")
+                .to("#cons-step-7", { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.2");
+
+            // Animate the step descriptions - SLOWER
+            gsap.fromTo("#consumer-steps .step-item",
+                { opacity: 0, x: -50 },
+                { opacity: 1, x: 0, duration: 0.8, stagger: 0.4, ease: "power2.out", delay: 0.8 }
+            );
+
+            // Add pulsing effects to each step - SLOWER
+            timeline
+                .to("#cons-step-1 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=6")
+                .to("#cons-step-2 circle", { scale: 1.2, duration: 0.5, ease: "power2.inOut", repeat: 1, yoyo: true }, "-=5.2")
+                .to("#cons-step-3 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=4.4")
+                .to("#cons-step-4 circle", { scale: 1.2, duration: 0.5, ease: "power2.inOut", repeat: 1, yoyo: true }, "-=3.6")
+                .to("#cons-step-5 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=2.8")
+                .to("#cons-step-6 circle", { scale: 1.2, duration: 0.5, ease: "power2.inOut", repeat: 1, yoyo: true }, "-=2")
+                .to("#cons-step-7 circle", {
+                    scale: 1.2,
+                    duration: 0.5,
+                    ease: "power2.inOut",
+                    repeat: 1,
+                    yoyo: true
+                }, "-=1.2");
+
+            // Show the animated flow dots after all steps are visible - SLOWER
+            timeline.to("#cons-flow-dots", { opacity: 1, duration: 0.8, ease: "power2.inOut" });
+
+            return timeline;
+        }
+
+        // Replay consumer animation
+        function replayConsumerAnimation() {
+            animateConsumerFlow();
+        }
+
+        // System animations
+        function animateSystemFlow() {
+            // Since the complete flow is now the system flow, we can simply call animateCompleteFlow
+            return animateCompleteFlow();
+        }
+
+        // Complete flow animation
+        function animateCompleteFlow() {
+            const timeline = gsap.timeline();
+
+            // Reset all elements first
+            gsap.set(["#producer-flow-section g[id^='step']", "#consumer-flow-section g[id^='step']", "#kafka-topic-section", "#redis-state-section"], { opacity: 1, scale: 1 });
+            gsap.set(".flow-arrow", { opacity: 0 });
+            gsap.set(".redis-line", { opacity: 0 });
+            gsap.set(".msg", { opacity: 0 });
+            gsap.set("#flow-dots-complete", { opacity: 0 });
+
+            // Animate Producer Flow (steps 1-7)
+            timeline
+                .from("#step1-scheduler", { scale: 0, duration: 0.5, ease: "back.out" })
+                .from("#step2-producer", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step3-redis-check", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step4-database", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step5-hash-check", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step6-kafka-send", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step7-mark-sent", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3");
+
+            // Animate producer arrows
+            timeline
+                .to("#arrow-1-2", { opacity: 1, duration: 0.3 })
+                .to("#arrow-2-3", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-3-4", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-4-5", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-5-6", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-6-7", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-7-kafka", { opacity: 1, duration: 0.5 });
+
+            // Animate Kafka topic
+            timeline
+                .from("#kafka-topic-section", { opacity: 0, y: 20, duration: 0.8, ease: "power2.out" })
+                .to(".msg", { opacity: 1, duration: 0.5, stagger: 0.05 });
+
+            // Animate Kafka to Consumer arrow
+            timeline.to("#arrow-kafka-8", { opacity: 1, duration: 0.5 });
+
+            // Animate Consumer Flow (steps 8-14)
+            timeline
+                .from("#step8-pull", { scale: 0, duration: 0.5, ease: "back.out" })
+                .from("#step9-check-processing", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step10-check-db", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step11-set-processing", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step12-process", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step13-update-db", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3")
+                .from("#step14-cleanup", { scale: 0, duration: 0.5, ease: "back.out" }, "-=0.3");
+
+            // Animate consumer arrows
+            timeline
+                .to("#arrow-8-9", { opacity: 1, duration: 0.3 })
+                .to("#arrow-9-10", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-10-11", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-11-12", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-12-13", { opacity: 1, duration: 0.3 }, "-=0.1")
+                .to("#arrow-13-14", { opacity: 1, duration: 0.3 }, "-=0.1");
+
+            // Animate Redis state
+            timeline
+                .from("#redis-state-section", { opacity: 0, x: 20, duration: 0.8, ease: "power2.out" }, "-=3")
+                .to(".redis-line", { opacity: 0.3, duration: 0.5, stagger: 0.1 });
+
+            // Show animated flow dots
+            timeline.to("#flow-dots-complete", { opacity: 1, duration: 0.5 });
+
+            return timeline;
+        }
+
+        // Replay complete flow animation
+        function replayCompleteFlow() {
+            animateCompleteFlow();
+        }
+
+        // Code example switching
+        function showCodeExample(type) {
+            // Hide all code examples
+            document.querySelectorAll('.code-example').forEach(example => {
+                example.classList.add('hidden');
+            });
+
+            // Remove active from all tabs
+            document.querySelectorAll('.tabs-boxed .tab').forEach(tab => {
+                tab.classList.remove('tab-active');
+            });
+
+            // Show selected example
+            document.getElementById(`code-${type}`).classList.remove('hidden');
+
+            // Mark tab as active
+            event.target.classList.add('tab-active');
+
+            // Animate code appearance
+            gsap.from(`#code-${type}`, {
+                opacity: 0,
+                y: 20,
+                duration: 0.5,
+                ease: "power2.out"
+            });
+        }
+
+        // Initialize when DOM is ready
+        function initialize() {
+            console.log('Initializing page...');
+
+            // Initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+                console.log('Icons initialized');
+            } else {
+                console.error('Lucide not loaded - trying again in 1 second');
+                setTimeout(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                        console.log('Icons initialized on retry');
+                    }
+                }, 1000);
+            }
+
+            // Initialize floating navigation
+            initFloatingNav();
+            console.log('Floating navigation initialized');
+
+            // Trigger initial animations for the first section
+            animateTab('producer');
+        }
+
+        // Wait for everything to load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM Content Loaded');
+            initialize();
+        });
+
+        // Additional fallback
+        window.addEventListener('load', () => {
+            console.log('Window loaded');
+            // Re-initialize icons in case they weren't ready
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+
+</html>
