@@ -169,8 +169,8 @@ async function main() {
   await producer.connect();
   await consumer.connect();
 
-  // Produce messages
-  await producer.produceMessages({ status: "pending" }, 100, "batch-1");
+  // Produce messages with message type
+  await producer.produceMessages({ status: "pending" }, 100, "new");
 
   // Start consuming
   await consumer.startConsuming();
@@ -210,6 +210,83 @@ KJO uses a **hybrid state model**:
 ```
 
 \*Processing state is virtual and managed automatically by KJO.
+
+### Message Types
+
+KJO uses **message types** to categorize and route messages for different processing scenarios. The `messageType` parameter in `produceMessages()` serves multiple critical purposes:
+
+#### 🏷️ **Message Classification**
+
+Message types categorize messages for consumers to handle different processing scenarios:
+
+```javascript
+// Different message types for different scenarios
+await producer.produceMessages(criteria, limit, "new"); // First-time processing
+await producer.produceMessages(criteria, limit, "retry"); // Retry failed items
+await producer.produceMessages(criteria, limit, "urgent"); // High-priority items
+await producer.produceMessages(criteria, limit, "batch"); // Batch processing
+```
+
+#### 🔑 **Kafka Message Keys**
+
+Message types are embedded in Kafka message keys for partitioning and deduplication:
+
+```javascript
+// Same item with different message types creates different keys
+// Item ID "abc123" with type "new" → Kafka key: "new-a1b2c3d4"
+// Item ID "abc123" with type "retry" → Kafka key: "retry-a1b2c3d4"
+```
+
+#### 📦 **Message Structure**
+
+Message types are included in both the message payload and headers:
+
+**Message Payload:**
+
+```json
+{
+  "id": "abc123",
+  "type": "retry",
+  "data": {
+    "name": "example-task",
+    "status": "failed"
+  }
+}
+```
+
+**Message Headers:**
+
+```json
+{
+  "message-type": "retry",
+  "item-id": "abc123",
+  "stable-key": "retry-a1b2c3d4",
+  "content-hash": "md5hash",
+  "timestamp": "1640995200000",
+  "deduplication-strategy": "redis"
+}
+```
+
+#### 🔄 **Consumer Processing Logic**
+
+Consumers can differentiate processing based on message type:
+
+```javascript
+async process(messageData) {
+  const { type, data } = messageData;
+
+  switch (type) {
+    case "new":
+      return await this.processNewItem(data);
+    case "retry":
+      return await this.retryFailedItem(data);
+    case "urgent":
+      return await this.processUrgentItem(data);
+    default:
+      return await this.processRegularItem(data);
+  }
+}
+```
 
 ## 🏭 Creating Producers
 
@@ -268,9 +345,28 @@ class MyProducer extends AbstractProducer {
     console.error(`❌ Failed to send item ${itemId}:`, error);
   }
 
-  // Convenience method
-  async producePendingTasks(limit = 100) {
-    await this.produceMessages({ status: "pending" }, limit, "pending-batch");
+  // Convenience methods with different message types
+  async produceNewTasks(limit = 100) {
+    await this.produceMessages({ status: "pending" }, limit, "new");
+  }
+
+  async produceFailedTasks(limit = 50) {
+    await this.produceMessages({ status: "failed" }, limit, "retry");
+  }
+
+  async produceUrgentTasks(limit = 20) {
+    await this.produceMessages(
+      {
+        status: "pending",
+        priority: "urgent",
+      },
+      limit,
+      "urgent"
+    );
+  }
+
+  async produceBatchTasks(limit = 500) {
+    await this.produceMessages({ status: "pending" }, limit, "batch");
   }
 }
 ```
@@ -310,13 +406,21 @@ class MyConsumer extends AbstractConsumer {
 
   // Required: Main business logic
   async process(messageData) {
-    const { data } = messageData;
+    const { type, data } = messageData;
 
-    // Your custom processing logic
-    const result = await this.processor.processTask(data);
-
-    // Return result for logging/monitoring
-    return result;
+    // Process differently based on message type
+    switch (type) {
+      case "new":
+        return await this.processor.processNewTask(data);
+      case "retry":
+        return await this.processor.retryTask(data);
+      case "urgent":
+        return await this.processor.processUrgentTask(data);
+      case "batch":
+        return await this.processor.processBatchTask(data);
+      default:
+        return await this.processor.processTask(data);
+    }
   }
 
   // Required: Mark item as completed in database
@@ -750,7 +854,7 @@ abstract class AbstractProducer {
   produceMessages(
     criteria: any,
     limit: number,
-    messageType: string
+    messageType: string // Required: Message type for categorization ("new", "retry", "urgent", etc.)
   ): Promise<void>;
 
   // Abstract methods to implement
@@ -808,6 +912,57 @@ abstract class AbstractConsumer {
   onSuccess(itemId: string): Promise<void>;
 
   onFailed(itemId: string, error: Error): Promise<void>;
+}
+```
+
+### Message Type Parameter
+
+The `messageType` parameter in `produceMessages()` is **required** and serves multiple purposes:
+
+#### Usage
+
+```typescript
+// Basic usage
+await producer.produceMessages(criteria, limit, messageType);
+
+// Common message types
+await producer.produceMessages({ status: "pending" }, 100, "new");
+await producer.produceMessages({ status: "failed" }, 50, "retry");
+await producer.produceMessages({ priority: "high" }, 25, "urgent");
+await producer.produceMessages({ batch: true }, 1000, "batch");
+```
+
+#### Purpose
+
+- **Message Classification**: Categorizes messages for different processing scenarios
+- **Kafka Key Generation**: Creates unique message keys (`messageType-hash`) for partitioning
+- **Consumer Logic**: Enables type-based processing in consumers
+- **Monitoring**: Provides structured logging and batch tracking
+- **Deduplication**: Ensures same item with different types creates different messages
+
+#### Message Structure
+
+```json
+{
+  "id": "item123",
+  "type": "retry",
+  "data": {
+    "name": "example-item",
+    "status": "failed",
+    "priority": "normal"
+  }
+}
+```
+
+#### Headers
+
+```json
+{
+  "message-type": "retry",
+  "item-id": "item123",
+  "stable-key": "retry-a1b2c3d4",
+  "content-hash": "md5hash",
+  "timestamp": "1640995200000"
 }
 ```
 
