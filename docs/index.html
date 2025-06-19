@@ -4,7 +4,44 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Producer/Consumer Framework - Technical Documentation</title>
+    <title>Kafka Job Orchestrator (KJO) - Technical Documentation</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Database-agnostic, high-availability distributed job orchestrator built on Kafka and Redis. Design resilient cronjobs and task processors with built-in deduplication, concurrent processing, and clean architecture.">
+    <meta name="keywords"
+        content="kafka, redis, job orchestrator, distributed systems, microservices, message queue, producer consumer, deduplication, typescript, nodejs">
+    <meta name="author" content="Jonas Kahn">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Kafka Job Orchestrator (KJO) - Technical Documentation">
+    <meta property="og:description"
+        content="Database-agnostic, high-availability distributed job orchestrator built on Kafka and Redis with built-in deduplication and concurrent processing.">
+    <meta property="og:image" content="https://jonaskahn.github.io/kafka-job-orchestrator/og-image.png">
+    <meta property="og:url" content="https://jonaskahn.github.io/kafka-job-orchestrator/">
+    <meta property="og:site_name" content="Kafka Job Orchestrator">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Kafka Job Orchestrator (KJO) - Technical Documentation">
+    <meta property="twitter:description"
+        content="Database-agnostic, high-availability distributed job orchestrator built on Kafka and Redis with built-in deduplication and concurrent processing.">
+    <meta property="twitter:image" content="https://jonaskahn.github.io/kafka-job-orchestrator/og-image.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jonaskahn.github.io/kafka-job-orchestrator/">
+
+    <!-- Language -->
+    <meta http-equiv="content-language" content="en">
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="msapplication-TileColor" content="#3b82f6">
+
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="../manifest.json">
 
     <!-- Tailwind CSS + DaisyUI -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.min.css" rel="stylesheet" type="text/css" />
@@ -218,8 +255,20 @@
     <div class="container mx-auto p-4 max-w-7xl">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-base-content mb-2">Producer/Consumer Framework</h1>
+            <h1 class="text-4xl font-bold text-base-content mb-2">Kafka Job Orchestrator (KJO)</h1>
             <p class="text-base-content/70 text-lg">Technical Documentation and Architecture Overview</p>
+            <div class="flex justify-center gap-4 mt-4">
+                <a href="https://github.com/jonaskahn/kafka-job-orchestrator" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-primary btn-sm">
+                    <i class="w-4 h-4" data-lucide="github"></i>
+                    View on GitHub
+                </a>
+                <a href="https://www.npmjs.com/package/@jonaskahn%2Fkafka-job-orchestrator" target="_blank"
+                    rel="noopener noreferrer" class="btn btn-secondary btn-sm">
+                    <i class="w-4 h-4" data-lucide="package"></i>
+                    NPM Package
+                </a>
+            </div>
         </div>
 
         <!-- Floating Navigation -->
@@ -439,10 +488,10 @@
                             <text class="fill-base-content text-sm font-semibold" text-anchor="middle" x="65" y="20">TTL
                                 Settings
                             </text>
-                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="35">ID: 120
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="35">ID: 20
                                 seconds
                             </text>
-                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="45">Hash: 120
+                            <text class="fill-base-content text-xs" text-anchor="middle" x="65" y="45">Hash: 20
                                 seconds
                             </text>
                         </g>
@@ -687,7 +736,7 @@
       await redisService.setSentMessage(itemId, messageHash);
       // Key: PREFIX_SENT:itemId
       // Value: messageHash
-      // TTL: 120 seconds (2 minutes)
+      // TTL: 20 seconds (default, 2x processing TTL)
 
       // Call success handler
       await this.onSuccess(itemId);
@@ -701,7 +750,7 @@
                                             <ul class="text-sm mt-1 ml-4 list-disc">
                                                 <li>ID tracking: Item identifier storage</li>
                                                 <li>Hash storage: Content fingerprint for comparison</li>
-                                                <li>TTL configuration: 120 second expiration</li>
+                                                <li>TTL configuration: 20 second expiration (2x processing TTL)</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -765,7 +814,7 @@
                             <div class="mockup-code">
                                 <pre><code>    // Redis key pattern
     EMAIL_SENT:item123 → "hash123..."
-    // TTL: 120 seconds (2 minutes)
+    // TTL: 20 seconds (default, 2x processing TTL)
 
     // Check during query
     const sentIds = await redisService.getSentIds();
@@ -806,7 +855,8 @@
                                 <li><strong>Query Time:</strong> Excludes IDs found in Redis</li>
                                 <li><strong>Before Send:</strong> Validates content hash against stored values</li>
                                 <li><strong>After Send:</strong> Records ID and hash with TTL</li>
-                                <li><strong>TTL Strategy:</strong> 120 second expiration for sent items</li>
+                                <li><strong>TTL Strategy:</strong> 20 second expiration for sent items (2x processing
+                                    TTL)</li>
                                 <li><strong>Processing Keys:</strong> CONS:PREFIX:* pattern for active processing</li>
                             </ul>
                         </div>
@@ -1939,7 +1989,7 @@ await redis.setex(
                             <text class="fill-white font-bold" text-anchor="middle" x="70" y="20">7. Redis</text>
                             <text class="fill-white text-xs" text-anchor="middle" x="70" y="35">Mark Sent</text>
                             <text class="fill-white text-xs" text-anchor="middle" x="70" y="48">SETEX</text>
-                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">TTL: 120s</text>
+                            <text class="fill-white text-xs" text-anchor="middle" x="70" y="61">TTL: 20s</text>
                         </g>
                     </g>
 
@@ -2095,7 +2145,7 @@ await redis.setex(
                             <text class="fill-base-content font-semibold" x="0" y="0">Producer Keys:</text>
                             <rect fill="#fee2e2" height="50" rx="6" width="210" x="0" y="10" />
                             <text class="fill-base-content text-xs" x="10" y="30">EMAIL_SENT:id123 → "hash"</text>
-                            <text class="fill-error text-xs font-semibold" x="10" y="45">TTL: 120 seconds</text>
+                            <text class="fill-error text-xs font-semibold" x="10" y="45">TTL: 20 seconds</text>
                         </g>
 
                         <g transform="translate(20, 130)">
@@ -2280,12 +2330,18 @@ log.retention.check.interval.ms=300000</code></pre>
                                     <div class="bg-base-200 p-3 rounded">
                                         <p class="font-semibold text-sm">Sent Message Keys</p>
                                         <code class="text-xs">PREFIX_SENT:itemId</code>
-                                        <p class="text-xs mt-1">TTL: 120s (2 minutes)</p>
+                                        <p class="text-xs mt-1">TTL: 20s (default, 2x processing)</p>
                                     </div>
                                     <div class="bg-base-200 p-3 rounded">
                                         <p class="font-semibold text-sm">Message Hash Storage</p>
                                         <code class="text-xs">Value: md5(id+content+state)</code>
                                     </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="w-4 h-4" data-lucide="info"></i>
+                                    <span class="text-xs"><strong>TTL Logic:</strong> SENT TTL defaults to 2x PROCESSING
+                                        TTL to ensure sent messages are tracked longer than processing
+                                        operations.</span>
                                 </div>
                             </div>
                             <div>
@@ -2416,7 +2472,7 @@ log.retention.check.interval.ms=300000</code></pre>
                             <li class="step step-primary">
                                 <div class="text-left ml-4">
                                     <p class="font-semibold">Mark as Sent in Redis</p>
-                                    <p class="text-sm text-base-content/70">Store ID + hash with 120s TTL</p>
+                                    <p class="text-sm text-base-content/70">Store ID + hash with 20s TTL (default)</p>
                                 </div>
                             </li>
                         </ul>
@@ -2490,8 +2546,8 @@ newHash = md5(id + email + state)       # New hash
 if (oldHash === newHash) skip()
 
 # Step 3: After sending to Kafka
-SETEX EMAIL_SENT:id5 120 "xyz789..."    # Save new hash
-# Expires in 2 minutes</code></pre>
+SETEX EMAIL_SENT:id5 20 "xyz789..."     # Save new hash
+# Expires in 20 seconds (default TTL)</code></pre>
                         </div>
                     </div>
                     <div>
@@ -2929,8 +2985,24 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             <div class="collapse-content">
                                 <p>Extract unique identifier from Kafka message.</p>
                                 <div class="mockup-code mt-2">
-                                    <pre><code>getMessageId(messageData) {
+                                    <pre><code>async getMessageId(messageData) {
     return messageData.id;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand getMessageKey method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-primary">getMessageKey(messageData)</code>
+                                <span class="badge badge-error badge-sm ml-2">Required</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Extract human-readable key for logging purposes.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async getMessageKey(messageData) {
+    return messageData.email || messageData.name || messageData.id;
 }</code></pre>
                                 </div>
                             </div>
@@ -2962,6 +3034,14 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Update database state to COMPLETED. Called after successful processing.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async markItemAsCompleted(itemId) {
+    await this.collection.updateOne(
+        { _id: itemId },
+        { $set: { state: 'COMPLETED', completedAt: new Date() } }
+    );
+}</code></pre>
+                                </div>
                             </div>
                         </div>
 
@@ -2973,6 +3053,14 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Update database state to FAILED. Called when processing fails.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async markItemAsFailed(itemId) {
+    await this.collection.updateOne(
+        { _id: itemId },
+        { $set: { state: 'FAILED', failedAt: new Date() } }
+    );
+}</code></pre>
+                                </div>
                             </div>
                         </div>
 
@@ -2984,6 +3072,32 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Check if item is already completed to prevent reprocessing.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async isItemCompleted(itemId) {
+    const item = await this.collection.findOne(
+        { _id: itemId, state: 'COMPLETED' }
+    );
+    return item !== null;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand handleProcessingResult method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-success">handleProcessingResult(id, result)</code>
+                                <span class="badge badge-success badge-sm ml-2">Optional</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Handle processing result after successful business logic. Use to save content, update
+                                    additional fields, etc.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async handleProcessingResult(id, result) {
+    // Save processed content, update additional fields
+    await this.saveProcessedContent(id, result);
+}</code></pre>
+                                </div>
                             </div>
                         </div>
 
@@ -2995,6 +3109,29 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Hook called after successful processing. Use for logging, metrics, etc.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async onSuccess(itemId) {
+    console.log(`Successfully processed: ${itemId}`);
+    // Add custom success handling
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapse collapse-arrow bg-base-200">
+                            <input aria-label="Expand onFailed method details" type="checkbox" />
+                            <div class="collapse-title font-medium">
+                                <code class="text-success">onFailed(itemId, error)</code>
+                                <span class="badge badge-success badge-sm ml-2">Optional</span>
+                            </div>
+                            <div class="collapse-content">
+                                <p>Hook called when processing fails. Use for error handling, alerts, etc.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async onFailed(itemId, error) {
+    console.error(`Failed to process: ${itemId}`, error);
+    // Add custom error handling, alerts, etc.
+}</code></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3070,6 +3207,12 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Hook called after successfully sending message to Kafka.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async onSuccess(itemId) {
+    console.log(`Successfully sent: ${itemId}`);
+    // Add custom success handling
+}</code></pre>
+                                </div>
                             </div>
                         </div>
 
@@ -3081,8 +3224,69 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                             </div>
                             <div class="collapse-content">
                                 <p>Hook called when message sending fails.</p>
+                                <div class="mockup-code mt-2">
+                                    <pre><code>async onFailed(itemId, error) {
+    console.error(`Failed to send: ${itemId}`, error);
+    // Add custom error handling, retry logic, etc.
+}</code></pre>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Method Summary Tables -->
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <!-- Consumer Methods Summary -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-lg mb-4">
+                        <i class="w-5 h-5" data-lucide="download"></i>
+                        Consumer Implementation Summary
+                    </h3>
+
+                    <h4 class="font-semibold text-error mb-2">Required Methods (6)</h4>
+                    <div class="space-y-1 text-sm mb-4">
+                        <div><code class="text-primary">getMessageId(messageData)</code> - Extract unique ID</div>
+                        <div><code class="text-primary">getMessageKey(messageData)</code> - Extract display key</div>
+                        <div><code class="text-primary">process(messageData)</code> - Business logic</div>
+                        <div><code class="text-primary">markItemAsCompleted(itemId)</code> - Update state to COMPLETED
+                        </div>
+                        <div><code class="text-primary">markItemAsFailed(itemId)</code> - Update state to FAILED</div>
+                        <div><code class="text-primary">isItemCompleted(itemId)</code> - Check completion status</div>
+                    </div>
+
+                    <h4 class="font-semibold text-success mb-2">Optional Hook Methods (3)</h4>
+                    <div class="space-y-1 text-sm">
+                        <div><code class="text-success">handleProcessingResult(id, result)</code> - Handle results</div>
+                        <div><code class="text-success">onSuccess(id)</code> - Success callback</div>
+                        <div><code class="text-success">onFailed(id, error)</code> - Failure callback</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Producer Methods Summary -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title text-lg mb-4">
+                        <i class="w-5 h-5" data-lucide="upload"></i>
+                        Producer Implementation Summary
+                    </h3>
+
+                    <h4 class="font-semibold text-error mb-2">Required Methods (3)</h4>
+                    <div class="space-y-1 text-sm mb-4">
+                        <div><code class="text-primary">getNextProcessingItems(criteria, limit, excludedIds)</code> -
+                            Fetch data</div>
+                        <div><code class="text-primary">getItemId(item)</code> - Extract unique ID</div>
+                        <div><code class="text-primary">getItemKey(item)</code> - Extract display key</div>
+                    </div>
+
+                    <h4 class="font-semibold text-success mb-2">Optional Hook Methods (2)</h4>
+                    <div class="space-y-1 text-sm">
+                        <div><code class="text-success">onSuccess(itemId)</code> - Success callback</div>
+                        <div><code class="text-success">onFailed(itemId, error)</code> - Failure callback</div>
                     </div>
                 </div>
             </div>
@@ -3094,17 +3298,74 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
             <div>
                 <h3 class="font-bold">Implementation Requirements</h3>
                 <ul class="mt-2 space-y-1">
-                    <li>• Processing state management handled by Redis</li>
-                    <li>• Virtual state pattern - no database persistence required</li>
+                    <li>• <strong>Consumer:</strong> 6 required methods, 3 optional hook methods</li>
+                    <li>• <strong>Producer:</strong> 3 required methods, 2 optional hook methods</li>
+                    <li>• Processing state management handled by Redis automatically</li>
+                    <li>• Virtual state pattern - no database persistence required for framework</li>
                     <li>• Environment variables required for configuration</li>
                     <li>• Automatic topic creation supported on connection</li>
-                    <li>• Error handling required in <code>process()</code> method</li>
+                    <li>• All async methods should use <code>async/await</code> pattern</li>
                 </ul>
             </div>
         </div>
         </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded mt-16">
+        <nav class="grid grid-flow-col gap-4">
+            <a href="https://github.com/jonaskahn/kafka-job-orchestrator" target="_blank" rel="noopener noreferrer"
+                class="link link-hover">GitHub</a>
+            <a href="https://www.npmjs.com/package/@jonaskahn%2Fkafka-job-orchestrator" target="_blank"
+                rel="noopener noreferrer" class="link link-hover">NPM</a>
+            <a href="https://github.com/jonaskahn/kafka-job-orchestrator/blob/main/LICENSE" target="_blank"
+                rel="noopener noreferrer" class="link link-hover">License</a>
+            <a href="https://github.com/jonaskahn/kafka-job-orchestrator/issues" target="_blank"
+                rel="noopener noreferrer" class="link link-hover">Issues</a>
+        </nav>
+        <nav>
+            <div class="grid grid-flow-col gap-4">
+                <a href="https://github.com/jonaskahn" target="_blank" rel="noopener noreferrer"
+                    aria-label="GitHub Profile">
+                    <i class="w-6 h-6" data-lucide="github"></i>
+                </a>
+                <a href="https://www.npmjs.com/~jonaskahn" target="_blank" rel="noopener noreferrer"
+                    aria-label="NPM Profile">
+                    <i class="w-6 h-6" data-lucide="package"></i>
+                </a>
+            </div>
+        </nav>
+        <aside>
+            <p>Copyright © 2024 - Made with ❤️ by <a href="https://github.com/jonaskahn" target="_blank"
+                    rel="noopener noreferrer" class="link link-primary">Jonas Kahn</a></p>
+            <p class="text-sm opacity-75">Licensed under Apache License 2.0</p>
+        </aside>
+    </footer>
     </div>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Kafka Job Orchestrator (KJO)",
+        "description": "Database-agnostic, high-availability distributed job orchestrator built on Kafka and Redis. Design resilient cronjobs and task processors with built-in deduplication, concurrent processing, and clean architecture.",
+        "url": "https://jonaskahn.github.io/kafka-job-orchestrator/",
+        "downloadUrl": "https://www.npmjs.com/package/@jonaskahn%2Fkafka-job-orchestrator",
+        "codeRepository": "https://github.com/jonaskahn/kafka-job-orchestrator",
+        "programmingLanguage": "JavaScript",
+        "runtimePlatform": "Node.js",
+        "operatingSystem": "Cross-platform",
+        "applicationCategory": "DeveloperApplication",
+        "author": {
+            "@type": "Person",
+            "name": "Jonas Kahn",
+            "url": "https://github.com/jonaskahn"
+        },
+        "license": "https://github.com/jonaskahn/kafka-job-orchestrator/blob/main/LICENSE",
+        "keywords": "kafka, redis, job orchestrator, distributed systems, microservices, message queue, producer consumer, deduplication, typescript, nodejs"
+    }
+    </script>
 
     <script>
         // Smooth scrolling to section
@@ -3485,6 +3746,28 @@ process.on(<span class="hljs-string">'SIGTERM'</span>, <span class="hljs-keyword
                 lucide.createIcons();
             }
         });
+
+        // Error handling for CDN failures
+        window.addEventListener('error', (e) => {
+            if (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') {
+                console.warn('Failed to load resource:', e.target.src || e.target.href);
+                // Show a fallback message if critical resources fail
+                if (e.target.src && e.target.src.includes('tailwindcss')) {
+                    document.body.style.fontFamily = 'system-ui, sans-serif';
+                    document.body.style.padding = '20px';
+                    document.body.style.lineHeight = '1.6';
+                }
+            }
+        }, true);
+
+        // Service Worker registration for PWA (optional)
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registered:', registration))
+                    .catch(error => console.log('SW registration failed:', error));
+            });
+        }
     </script>
 </body>
 
