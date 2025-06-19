@@ -633,24 +633,25 @@ const excludedIds = [...new Set([...processingIds, ...sentIds])];</code></pre>
                                     <h3 class="font-semibold text-lg">Query Data Source with Criteria</h3>
                                     <p class="text-base-content/70">Executes database query with specified criteria,
                                         excluding items found in Redis.</p>
-                                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto mt-2"><code class="language-javascript">    // Abstract method - you implement this
-    async getNextProcessingItems(criteria, limit, excludedIds) {
-      // Example MongoDB implementation
-      return await collection.find({
-        ...criteria,  // { state: STATES.PENDING }
-        _id: { $nin: excludedIds }
-      })
-      .limit(limit)
-      .toArray();
-    }
+                                    <div class="mockup-code mt-2">
+                                        <pre><code class="language-javascript">// Abstract method - you implement this
+async getNextProcessingItems(criteria, limit, excludedIds) {
+  // Example MongoDB implementation
+  return await collection.find({
+    ...criteria,  // { state: STATES.PENDING }
+    _id: { $nin: excludedIds }
+  })
+  .limit(limit)
+  .toArray();
+}
 
-    // Usage in your producer
-    await this.produceMessages(
-      { state: STATES.PENDING, priority: 'high' },
-      50,
-      "new"
-    );
-</code></pre>
+// Usage in your producer
+await this.produceMessages(
+  { state: STATES.PENDING, priority: 'high' },
+  50,
+  "new"
+);</code></pre>
+                                    </div>
                                     <div class="alert alert-success mt-2">
                                         <i class="w-4 h-4" data-lucide="plug"></i>
                                         <span>Compatible with MongoDB, MySQL, PostgreSQL, and other data sources.</span>
@@ -2742,272 +2743,277 @@ partition = hash(key) % partitionCount</code></pre>
 
                 <!-- Consumer Code Example -->
                 <div class="code-example" id="code-consumer">
-                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span class="hljs-keyword">const</span> { <span class="hljs-class">AbstractConsumer</span> } = <span class="hljs-function">require</span>(<span class="hljs-string">'@jonaskahn/kafka-job-orchestrator'</span>);
+                    <div class="mockup-code">
+                        <pre><code class="language-javascript">const { AbstractConsumer } = require('@jonaskahn/kafka-job-orchestrator');
 
-<span class="hljs-keyword">class</span> <span class="hljs-class">EmailConsumer</span> <span class="hljs-keyword">extends</span> <span class="hljs-class">AbstractConsumer</span> {
-    <span class="hljs-comment">// Define your states (PROCESSING is virtual - not in DB)</span>
-    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> <span class="hljs-function">STATES</span>() {
-        <span class="hljs-keyword">return</span> {
-            PENDING: <span class="hljs-string">1</span>,    <span class="hljs-comment">// Ready to process</span>
-            COMPLETED: <span class="hljs-string">2</span>,  <span class="hljs-comment">// Successfully sent</span>
-            FAILED: <span class="hljs-string">3</span>      <span class="hljs-comment">// Failed to send</span>
+class EmailConsumer extends AbstractConsumer {
+    // Define your states (PROCESSING is virtual - not in DB)
+    static get STATES() {
+        return {
+            PENDING: 1,    // Ready to process
+            COMPLETED: 2,  // Successfully sent
+            FAILED: 3      // Failed to send
         };
     }
 
-    <span class="hljs-function">constructor</span>() {
-        <span class="hljs-keyword">const</span> config = {
-            <span class="hljs-comment">// REQUIRED: Kafka topic name</span>
-            topic: <span class="hljs-string">'email-queue'</span>,
+    constructor() {
+        const config = {
+            // REQUIRED: Kafka topic name
+            topic: 'email-queue',
             
-            <span class="hljs-comment">// REQUIRED: Consumer group ID</span>
-            consumerGroup: <span class="hljs-string">'email-processors'</span>,
+            // REQUIRED: Consumer group ID
+            consumerGroup: 'email-processors',
             
-            <span class="hljs-comment">// REQUIRED: Redis configuration</span>
+            // REQUIRED: Redis configuration
             redisOptions: {
-                <span class="hljs-comment">// REQUIRED: Redis key prefix for deduplication</span>
-                keyPrefix: <span class="hljs-string">'EMAIL'</span>,
+                // REQUIRED: Redis key prefix for deduplication
+                keyPrefix: 'EMAIL',
                 
-                <span class="hljs-comment">// OPTIONAL: TTL for processing keys (default: 300 seconds)</span>
-                processingTtl: <span class="hljs-string">300</span>,
+                // OPTIONAL: TTL for processing keys (default: 300 seconds)
+                processingTtl: 300,
                 
-                <span class="hljs-comment">// OPTIONAL: TTL for sent message keys (default: 20 seconds)</span>
-                sentTtl: <span class="hljs-string">20</span>
+                // OPTIONAL: TTL for sent message keys (default: 20 seconds)
+                sentTtl: 20
             },
             
-            <span class="hljs-comment">// OPTIONAL: Topic auto-creation configuration</span>
+            // OPTIONAL: Topic auto-creation configuration
             topicOptions: {
-                <span class="hljs-comment">// OPTIONAL: Number of partitions (default: 1)</span>
-                partitions: <span class="hljs-string">4</span>,
+                // OPTIONAL: Number of partitions (default: 1)
+                partitions: 4,
                 
-                <span class="hljs-comment">// OPTIONAL: Replication factor (default: 1)</span>
-                replicationFactor: <span class="hljs-string">2</span>,
+                // OPTIONAL: Replication factor (default: 1)
+                replicationFactor: 2,
                 
-                <span class="hljs-comment">// OPTIONAL: Auto-create topic if not exists (default: true)</span>
-                autoCreate: <span class="hljs-keyword">true</span>,
+                // OPTIONAL: Auto-create topic if not exists (default: true)
+                autoCreate: true,
                 
-                <span class="hljs-comment">// OPTIONAL: Additional Kafka topic configurations</span>
+                // OPTIONAL: Additional Kafka topic configurations
                 configEntries: {
-                    <span class="hljs-string">'retention.ms'</span>: <span class="hljs-string">'604800000'</span>, <span class="hljs-comment">// 7 days retention</span>
-                    <span class="hljs-string">'compression.type'</span>: <span class="hljs-string">'gzip'</span>,
-                    <span class="hljs-string">'cleanup.policy'</span>: <span class="hljs-string">'delete'</span>
+                    'retention.ms': '604800000', // 7 days retention
+                    'compression.type': 'gzip',
+                    'cleanup.policy': 'delete'
                 },
                 
-                <span class="hljs-comment">// OPTIONAL: Additional topic options</span>
-                retentionMs: <span class="hljs-string">'604800000'</span>,
-                segmentMs: <span class="hljs-string">'86400000'</span>, <span class="hljs-comment">// 1 day</span>
-                compressionType: <span class="hljs-string">'gzip'</span>,
-                cleanupPolicy: <span class="hljs-string">'delete'</span>
+                // OPTIONAL: Additional topic options
+                retentionMs: '604800000',
+                segmentMs: '86400000', // 1 day
+                compressionType: 'gzip',
+                cleanupPolicy: 'delete'
             }
         };
-        <span class="hljs-keyword">super</span>(config);
+        super(config);
         
-        <span class="hljs-comment">// Initialize your services</span>
-        <span class="hljs-keyword">this</span>.emailService = <span class="hljs-keyword">new</span> EmailService();
+        // Initialize your services
+        this.emailService = new EmailService();
     }
 
-    <span class="hljs-comment">// REQUIRED: Extract ID from Kafka message</span>
-    <span class="hljs-function">getMessageId</span>(messageData) {
-        <span class="hljs-keyword">return</span> messageData.id;
+    // REQUIRED: Extract ID from Kafka message
+    getMessageId(messageData) {
+        return messageData.id;
     }
 
-    <span class="hljs-comment">// REQUIRED: Extract display key for logging</span>
-    <span class="hljs-function">getMessageKey</span>(messageData) {
-        <span class="hljs-keyword">return</span> messageData.data.recipient;
+    // REQUIRED: Extract display key for logging
+    getMessageKey(messageData) {
+        return messageData.data.recipient;
     }
 
-    <span class="hljs-comment">// REQUIRED: Your business logic - send the email</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">process</span>(messageData) {
-        <span class="hljs-keyword">const</span> { recipient, subject, body } = messageData.data;
+    // REQUIRED: Your business logic - send the email
+    async process(messageData) {
+        const { recipient, subject, body } = messageData.data;
         
-        <span class="hljs-comment">// Send email using your service</span>
-        <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.emailService.send({
+        // Send email using your service
+        const result = await this.emailService.send({
             to: recipient,
             subject: subject,
             html: body
         });
         
-        <span class="hljs-keyword">return</span> result; <span class="hljs-comment">// Return result for handleProcessingResult</span>
+        return result; // Return result for handleProcessingResult
     }
 
-    <span class="hljs-comment">// REQUIRED: Update database state to COMPLETED</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">markItemAsCompleted</span>(emailId) {
-        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+    // REQUIRED: Update database state to COMPLETED
+    async markItemAsCompleted(emailId) {
+        await EmailModel.updateOne(
             { _id: emailId },
-            { state: EmailConsumer.STATES.COMPLETED, sentAt: <span class="hljs-keyword">new</span> Date() }
+            { state: EmailConsumer.STATES.COMPLETED, sentAt: new Date() }
         );
     }
 
-    <span class="hljs-comment">// REQUIRED: Update database state to FAILED</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">markItemAsFailed</span>(emailId) {
-        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+    // REQUIRED: Update database state to FAILED
+    async markItemAsFailed(emailId) {
+        await EmailModel.updateOne(
             { _id: emailId },
-            { state: EmailConsumer.STATES.FAILED, lastError: <span class="hljs-keyword">new</span> Date() }
+            { state: EmailConsumer.STATES.FAILED, lastError: new Date() }
         );
     }
 
-    <span class="hljs-comment">// REQUIRED: Check if email was already sent</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">isItemCompleted</span>(emailId) {
-        <span class="hljs-keyword">const</span> email = <span class="hljs-keyword">await</span> EmailModel.findById(emailId);
-        <span class="hljs-keyword">return</span> email?.state === EmailConsumer.STATES.COMPLETED;
+    // REQUIRED: Check if email was already sent
+    async isItemCompleted(emailId) {
+        const email = await EmailModel.findById(emailId);
+        return email?.state === EmailConsumer.STATES.COMPLETED;
     }
 
-    <span class="hljs-comment">// OPTIONAL: Save email provider response</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">handleProcessingResult</span>(emailId, result) {
-        <span class="hljs-keyword">await</span> EmailModel.updateOne(
+    // OPTIONAL: Save email provider response
+    async handleProcessingResult(emailId, result) {
+        await EmailModel.updateOne(
             { _id: emailId },
             { messageId: result.messageId, provider: result.provider }
         );
     }
 
-    <span class="hljs-comment">// OPTIONAL: Called on successful processing</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">onSuccess</span>(emailId) {
-        console.log(<span class="hljs-string">`✅ Successfully processed email: ${emailId}`</span>);
-        <span class="hljs-comment">// Add custom success handling, metrics, etc.</span>
+    // OPTIONAL: Called on successful processing
+    async onSuccess(emailId) {
+        console.log(`✅ Successfully processed email: ${emailId}`);
+        // Add custom success handling, metrics, etc.
     }
 
-    <span class="hljs-comment">// OPTIONAL: Called on failed processing</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">onFailed</span>(emailId, error) {
-        console.error(<span class="hljs-string">`❌ Failed to process email: ${emailId}`</span>, error);
-        <span class="hljs-comment">// Add custom error handling, alerts, etc.</span>
+    // OPTIONAL: Called on failed processing
+    async onFailed(emailId, error) {
+        console.error(`❌ Failed to process email: ${emailId}`, error);
+        // Add custom error handling, alerts, etc.
     }
 }
 
-<span class="hljs-comment">// Start the consumer</span>
-<span class="hljs-keyword">const</span> consumer = <span class="hljs-keyword">new</span> EmailConsumer();
-<span class="hljs-keyword">await</span> consumer.connect();
-<span class="hljs-keyword">await</span> consumer.startConsuming();</code></pre>
+// Start the consumer
+const consumer = new EmailConsumer();
+await consumer.connect();
+await consumer.startConsuming();</code></pre>
+                    </div>
                 </div>
 
                 <!-- Producer Code Example -->
                 <div class="code-example hidden" id="code-producer">
-                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span class="hljs-keyword">const</span> { <span class="hljs-class">AbstractProducer</span> } = <span class="hljs-function">require</span>(<span class="hljs-string">'@jonaskahn/kafka-job-orchestrator'</span>);
+                    <div class="mockup-code">
+                        <pre><code class="language-javascript">const { AbstractProducer } = require('@jonaskahn/kafka-job-orchestrator');
 
-<span class="hljs-keyword">class</span> <span class="hljs-class">EmailProducer</span> <span class="hljs-keyword">extends</span> <span class="hljs-class">AbstractProducer</span> {
-    <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> <span class="hljs-function">STATES</span>() {
-        <span class="hljs-keyword">return</span> {
-            PENDING: <span class="hljs-string">1</span>,
-            COMPLETED: <span class="hljs-string">2</span>,
-            FAILED: <span class="hljs-string">3</span>
+class EmailProducer extends AbstractProducer {
+    static get STATES() {
+        return {
+            PENDING: 1,
+            COMPLETED: 2,
+            FAILED: 3
         };
     }
 
-    <span class="hljs-function">constructor</span>() {
-        <span class="hljs-keyword">const</span> config = {
-            <span class="hljs-comment">// REQUIRED: Kafka topic name</span>
-            topic: <span class="hljs-string">'email-queue'</span>,
+    constructor() {
+        const config = {
+            // REQUIRED: Kafka topic name
+            topic: 'email-queue',
             
-            <span class="hljs-comment">// REQUIRED: Redis configuration</span>
+            // REQUIRED: Redis configuration
             redisOptions: {
-                <span class="hljs-comment">// REQUIRED: Redis key prefix for deduplication</span>
-                keyPrefix: <span class="hljs-string">'EMAIL'</span>,
+                // REQUIRED: Redis key prefix for deduplication
+                keyPrefix: 'EMAIL',
                 
-                <span class="hljs-comment">// OPTIONAL: TTL for processing keys (default: 300 seconds)</span>
-                processingTtl: <span class="hljs-string">300</span>,
+                // OPTIONAL: TTL for processing keys (default: 300 seconds)
+                processingTtl: 300,
                 
-                <span class="hljs-comment">// OPTIONAL: TTL for sent message keys (default: 20 seconds)</span>
-                sentTtl: <span class="hljs-string">20</span>
+                // OPTIONAL: TTL for sent message keys (default: 20 seconds)
+                sentTtl: 20
             },
             
-            <span class="hljs-comment">// OPTIONAL: Topic auto-creation configuration</span>
+            // OPTIONAL: Topic auto-creation configuration
             topicOptions: {
-                <span class="hljs-comment">// OPTIONAL: Number of partitions (default: 1)</span>
-                partitions: <span class="hljs-string">4</span>,
+                // OPTIONAL: Number of partitions (default: 1)
+                partitions: 4,
                 
-                <span class="hljs-comment">// OPTIONAL: Replication factor (default: 1)</span>
-                replicationFactor: <span class="hljs-string">2</span>,
+                // OPTIONAL: Replication factor (default: 1)
+                replicationFactor: 2,
                 
-                <span class="hljs-comment">// OPTIONAL: Auto-create topic if not exists (default: true)</span>
-                autoCreate: <span class="hljs-keyword">true</span>,
+                // OPTIONAL: Auto-create topic if not exists (default: true)
+                autoCreate: true,
                 
-                <span class="hljs-comment">// OPTIONAL: Additional Kafka topic configurations</span>
+                // OPTIONAL: Additional Kafka topic configurations
                 configEntries: {
-                    <span class="hljs-string">'retention.ms'</span>: <span class="hljs-string">'604800000'</span>, <span class="hljs-comment">// 7 days retention</span>
-                    <span class="hljs-string">'compression.type'</span>: <span class="hljs-string">'gzip'</span>,
-                    <span class="hljs-string">'cleanup.policy'</span>: <span class="hljs-string">'delete'</span>
+                    'retention.ms': '604800000', // 7 days retention
+                    'compression.type': 'gzip',
+                    'cleanup.policy': 'delete'
                 },
                 
-                <span class="hljs-comment">// OPTIONAL: Additional topic options</span>
-                retentionMs: <span class="hljs-string">'604800000'</span>,
-                segmentMs: <span class="hljs-string">'86400000'</span>, <span class="hljs-comment">// 1 day</span>
-                compressionType: <span class="hljs-string">'gzip'</span>,
-                cleanupPolicy: <span class="hljs-string">'delete'</span>
+                // OPTIONAL: Additional topic options
+                retentionMs: '604800000',
+                segmentMs: '86400000', // 1 day
+                compressionType: 'gzip',
+                cleanupPolicy: 'delete'
             }
         };
-        <span class="hljs-keyword">super</span>(config);
+        super(config);
     }
 
-    <span class="hljs-comment">// REQUIRED: Fetch emails from your database</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">getNextProcessingItems</span>(criteria, limit, excludedIds) {
-        <span class="hljs-keyword">const</span> { state, priority } = criteria;
+    // REQUIRED: Fetch emails from your database
+    async getNextProcessingItems(criteria, limit, excludedIds) {
+        const { state, priority } = criteria;
         
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> EmailModel.find({
+        return await EmailModel.find({
             state: state,
-            priority: priority || { $exists: <span class="hljs-keyword">true</span> },
+            priority: priority || { $exists: true },
             _id: { $nin: excludedIds }
         })
-        .sort({ priority: <span class="hljs-string">-1</span>, createdAt: <span class="hljs-string">1</span> })
+        .sort({ priority: -1, createdAt: 1 })
         .limit(limit);
     }
 
-    <span class="hljs-comment">// REQUIRED: Extract email ID</span>
-    <span class="hljs-function">getItemId</span>(email) {
-        <span class="hljs-keyword">return</span> email._id.toString();
+    // REQUIRED: Extract email ID
+    getItemId(email) {
+        return email._id.toString();
     }
 
-    <span class="hljs-comment">// REQUIRED: Extract display key for logging</span>
-    <span class="hljs-function">getItemKey</span>(email) {
-        <span class="hljs-keyword">return</span> email.recipient;
+    // REQUIRED: Extract display key for logging
+    getItemKey(email) {
+        return email.recipient;
     }
 
-    <span class="hljs-comment">// OPTIONAL: Called on successful message sending</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">onSuccess</span>(emailId) {
-        console.log(<span class="hljs-string">`✅ Successfully sent email: ${emailId}`</span>);
-        <span class="hljs-comment">// Add custom success handling, metrics, etc.</span>
+    // OPTIONAL: Called on successful message sending
+    async onSuccess(emailId) {
+        console.log(`✅ Successfully sent email: ${emailId}`);
+        // Add custom success handling, metrics, etc.
     }
 
-    <span class="hljs-comment">// OPTIONAL: Called on failed message sending</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">onFailed</span>(emailId, error) {
-        console.error(<span class="hljs-string">`❌ Failed to send email: ${emailId}`</span>, error);
-        <span class="hljs-comment">// Add custom error handling, retry logic, etc.</span>
+    // OPTIONAL: Called on failed message sending
+    async onFailed(emailId, error) {
+        console.error(`❌ Failed to send email: ${emailId}`, error);
+        // Add custom error handling, retry logic, etc.
     }
 
-    <span class="hljs-comment">// Convenience methods for different use cases</span>
-    <span class="hljs-keyword">async</span> <span class="hljs-function">producePendingEmails</span>(limit = <span class="hljs-string">100</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.produceMessages(
-            { state: EmailProducer.STATES.PENDING, priority: <span class="hljs-string">'high'</span> },
+    // Convenience methods for different use cases
+    async producePendingEmails(limit = 100) {
+        return await this.produceMessages(
+            { state: EmailProducer.STATES.PENDING, priority: 'high' },
             limit,
-            <span class="hljs-string">'new'</span>
+            'new'
         );
     }
 
-    <span class="hljs-keyword">async</span> <span class="hljs-function">produceFailedEmails</span>(limit = <span class="hljs-string">50</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.produceMessages(
+    async produceFailedEmails(limit = 50) {
+        return await this.produceMessages(
             { state: EmailProducer.STATES.FAILED },
             limit,
-            <span class="hljs-string">'retry'</span>
+            'retry'
         );
     }
 
-    <span class="hljs-keyword">async</span> <span class="hljs-function">produceHighPriorityEmails</span>(limit = <span class="hljs-string">50</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.produceMessages(
-            { state: EmailProducer.STATES.PENDING, priority: { $gte: <span class="hljs-string">8</span> } },
+    async produceHighPriorityEmails(limit = 50) {
+        return await this.produceMessages(
+            { state: EmailProducer.STATES.PENDING, priority: { $gte: 8 } },
             limit,
-            <span class="hljs-string">'urgent'</span>
+            'urgent'
         );
     }
 }</code></pre>
+                    </div>
                 </div>
 
                 <!-- Scheduler Code Example -->
                 <div class="code-example hidden" id="code-scheduler">
-                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto"><code class="language-javascript"><span class="hljs-keyword">const</span> cron = <span class="hljs-function">require</span>(<span class="hljs-string">'node-cron'</span>);
-<span class="hljs-keyword">const</span> <span class="hljs-class">EmailProducer</span> = <span class="hljs-function">require</span>(<span class="hljs-string">'./EmailProducer'</span>);
+                    <div class="mockup-code">
+                        <pre><code class="language-javascript">const cron = require('node-cron');
+const EmailProducer = require('./EmailProducer');
 
-<span class="hljs-keyword">class</span> <span class="hljs-class">EmailScheduler</span> {
-    <span class="hljs-function">constructor</span>() {
-        <span class="hljs-keyword">this</span>.producer = <span class="hljs-keyword">new</span> EmailProducer();
-        <span class="hljs-keyword">this</span>.isRunning = <span class="hljs-keyword">false</span>;
-        <span class="hljs-keyword">this</span>.isRetryRunning = <span class="hljs-keyword">false</span>;
+class EmailScheduler {
+    constructor() {
+        this.producer = new EmailProducer();
+        this.isRunning = false;
+        this.isRetryRunning = false;
     }
 
     <span class="hljs-keyword">async</span> <span class="hljs-function">start</span>() {
@@ -3144,8 +3150,9 @@ partition = hash(key) % partitionCount</code></pre>
     }
 }
 
-<span class="hljs-comment">// Start the scheduler</span>
+// Start the scheduler
 main();</code></pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3275,7 +3282,8 @@ main();</code></pre>
                                 <span class="badge badge-success badge-sm ml-2">Optional</span>
                             </div>
                             <div class="collapse-content">
-                                <p>Handle processing result after successful business logic. Use to save content, update
+                                <p>Handle processing result after successful business logic. Use to save content,
+                                    update
                                     additional fields, etc.</p>
                                 <div class="mockup-code mt-2">
                                     <pre><code class="language-javascript">async handleProcessingResult(id, result) {
@@ -3435,17 +3443,22 @@ main();</code></pre>
                     <h4 class="font-semibold text-error mb-2">Required Methods (6)</h4>
                     <div class="space-y-1 text-sm mb-4">
                         <div><code class="text-primary">getMessageId(messageData)</code> - Extract unique ID</div>
-                        <div><code class="text-primary">getMessageKey(messageData)</code> - Extract display key</div>
-                        <div><code class="text-primary">process(messageData)</code> - Business logic</div>
-                        <div><code class="text-primary">markItemAsCompleted(itemId)</code> - Update state to COMPLETED
+                        <div><code class="text-primary">getMessageKey(messageData)</code> - Extract display key
                         </div>
-                        <div><code class="text-primary">markItemAsFailed(itemId)</code> - Update state to FAILED</div>
-                        <div><code class="text-primary">isItemCompleted(itemId)</code> - Check completion status</div>
+                        <div><code class="text-primary">process(messageData)</code> - Business logic</div>
+                        <div><code class="text-primary">markItemAsCompleted(itemId)</code> - Update state to
+                            COMPLETED
+                        </div>
+                        <div><code class="text-primary">markItemAsFailed(itemId)</code> - Update state to FAILED
+                        </div>
+                        <div><code class="text-primary">isItemCompleted(itemId)</code> - Check completion status
+                        </div>
                     </div>
 
                     <h4 class="font-semibold text-success mb-2">Optional Hook Methods (3)</h4>
                     <div class="space-y-1 text-sm">
-                        <div><code class="text-success">handleProcessingResult(id, result)</code> - Handle results</div>
+                        <div><code class="text-success">handleProcessingResult(id, result)</code> - Handle results
+                        </div>
                         <div><code class="text-success">onSuccess(id)</code> - Success callback</div>
                         <div><code class="text-success">onFailed(id, error)</code> - Failure callback</div>
                     </div>
@@ -3462,7 +3475,8 @@ main();</code></pre>
 
                     <h4 class="font-semibold text-error mb-2">Required Methods (3)</h4>
                     <div class="space-y-1 text-sm mb-4">
-                        <div><code class="text-primary">getNextProcessingItems(criteria, limit, excludedIds)</code> -
+                        <div><code class="text-primary">getNextProcessingItems(criteria, limit, excludedIds)</code>
+                            -
                             Fetch data</div>
                         <div><code class="text-primary">getItemId(item)</code> - Extract unique ID</div>
                         <div><code class="text-primary">getItemKey(item)</code> - Extract display key</div>
@@ -3953,6 +3967,11 @@ main();</code></pre>
             // Re-initialize icons in case they weren't ready
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+            // Re-highlight all code blocks to ensure proper syntax highlighting
+            if (typeof hljs !== 'undefined') {
+                hljs.highlightAll();
+                console.log('Re-highlighted all code blocks');
             }
         });
 
