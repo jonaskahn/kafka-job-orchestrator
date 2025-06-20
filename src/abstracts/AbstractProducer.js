@@ -197,7 +197,7 @@ class AbstractProducer {
     );
   }
 
-  async produceMessages(criteria, limit, messageType) {
+  async produceMessages(criteria, limit, messageType = "new") {
     this._ensureProducerIsConnected();
 
     try {

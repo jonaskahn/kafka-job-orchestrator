@@ -166,7 +166,7 @@ export abstract class AbstractProducer {
   produceMessages(
     criteria: any,
     limit: number,
-    messageType: string
+    messageType?: string
   ): Promise<void>;
 
   /** Get next batch of items to process */
